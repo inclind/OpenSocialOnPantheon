@@ -278,13 +278,14 @@ function template_preprocess_details(&$variables) {
  */
 function template_preprocess_radios(&$variables) {
   $element = $variables['element'];
-  $variables['attributes'] = [];
   if (isset($element['#id'])) {
     $variables['attributes']['id'] = $element['#id'];
   }
   if (isset($element['#attributes']['title'])) {
     $variables['attributes']['title'] = $element['#attributes']['title'];
   }
+  // Disabled property should only be applied to input element children.
+  unset($variables['attributes']['disabled']);
   $variables['children'] = $element['#children'];
 }
 
@@ -300,13 +301,14 @@ function template_preprocess_radios(&$variables) {
  */
 function template_preprocess_checkboxes(&$variables) {
   $element = $variables['element'];
-  $variables['attributes'] = [];
   if (isset($element['#id'])) {
     $variables['attributes']['id'] = $element['#id'];
   }
   if (isset($element['#attributes']['title'])) {
     $variables['attributes']['title'] = $element['#attributes']['title'];
   }
+  // Disabled property should only be applied to input element children.
+  unset($variables['attributes']['disabled']);
   $variables['children'] = $element['#children'];
 }
 
@@ -423,11 +425,14 @@ function template_preprocess_textarea(&$variables) {
  * but the parent element should have neither. Use this carefully because a
  * field without an associated label can cause accessibility challenges.
  *
+ * To associate the label with a different field, set the #label_for property
+ * to the ID of the desired field.
+ *
  * @param array $variables
  *   An associative array containing:
  *   - element: An associative array containing the properties of the element.
  *     Properties used: #title, #title_display, #description, #id, #required,
- *     #children, #type, #name.
+ *     #children, #type, #name, #label_for.
  */
 function template_preprocess_form_element(&$variables) {
   $element = &$variables['element'];
@@ -439,6 +444,7 @@ function template_preprocess_form_element(&$variables) {
     '#title_display' => 'before',
     '#wrapper_attributes' => [],
     '#label_attributes' => [],
+    '#label_for' => NULL,
   ];
   $variables['attributes'] = $element['#wrapper_attributes'];
 
@@ -487,6 +493,12 @@ function template_preprocess_form_element(&$variables) {
   $variables['label'] = ['#theme' => 'form_element_label'];
   $variables['label'] += array_intersect_key($element, array_flip(['#id', '#required', '#title', '#title_display']));
   $variables['label']['#attributes'] = $element['#label_attributes'];
+  if (!empty($element['#label_for'])) {
+    $variables['label']['#for'] = $element['#label_for'];
+    if (!empty($element['#id'])) {
+      $variables['label']['#id'] = $element['#id'] . '--label';
+    }
+  }
 
   $variables['children'] = $element['#children'];
 }
@@ -507,10 +519,13 @@ function template_preprocess_form_element(&$variables) {
  * required. That is especially important for screenreader users to know
  * which field is required.
  *
+ * To associate the label with a different field, set the #for property to the
+ * ID of the desired field.
+ *
  * @param array $variables
  *   An associative array containing:
  *   - element: An associative array containing the properties of the element.
- *     Properties used: #required, #title, #id, #value, #description.
+ *     Properties used: #required, #title, #id, #value, #description, #for.
  */
 function template_preprocess_form_element_label(&$variables) {
   $element = $variables['element'];
@@ -824,7 +839,7 @@ function batch_process($redirect = NULL, Url $url = NULL, $redirect_callback = N
 
     // Assign an arbitrary id: don't rely on a serial column in the 'batch'
     // table, since non-progressive batches skip database storage completely.
-    $batch['id'] = db_next_id();
+    $batch['id'] = \Drupal::database()->nextId();
 
     // Move operations to a job queue. Non-progressive batches will use a
     // memory-based queue.

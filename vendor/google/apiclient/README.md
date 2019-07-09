@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/google/google-api-php-client.svg?branch=master)](https://travis-ci.org/google/google-api-php-client)
+[![Build Status](https://travis-ci.org/googleapis/google-api-php-client.svg?branch=master)](https://travis-ci.org/googleapis/google-api-php-client)
 
 # Google APIs Client Library for PHP #
 
@@ -29,7 +29,7 @@ composer installed.
 Once composer is installed, execute the following command in your project root to install this library:
 
 ```sh
-composer require google/apiclient:^2.0
+composer require google/apiclient:"^2.0"
 ```
 
 Finally, be sure to include the autoloader:
@@ -313,13 +313,34 @@ Now all calls made by this library will appear in the Charles UI.
 
 One additional step is required in Charles to view SSL requests. Go to **Charles > Proxy > SSL Proxying Settings** and add the domain you'd like captured. In the case of the Google APIs, this is usually `*.googleapis.com`.
 
+### Controlling HTTP Client Configuration Directly
+
+Google API Client uses [Guzzle](http://docs.guzzlephp.org) as its default HTTP client. That means that you can control your HTTP requests in the same manner you would for any application using Guzzle.
+
+Let's say, for instance, we wished to apply a referrer to each request.
+
+```php
+use GuzzleHttp\Client;
+
+$httpClient = new Client([
+    'headers' => [
+        'referer' => 'mysite.com'
+    ]
+]);
+
+$client = new Google_Client();
+$client->setHttpClient($httpClient);
+```
+
+Other Guzzle features such as [Handlers and Middleware](http://docs.guzzlephp.org/en/stable/handlers-and-middleware.html) offer even more control.
+
 ### Service Specific Examples ###
 
 YouTube: https://github.com/youtube/api-samples/tree/master/php
 
 ## How Do I Contribute? ##
 
-Please see the [contributing](CONTRIBUTING.md) page for more information. In particular, we love pull requests - but please make sure to sign the [contributor license agreement](https://developers.google.com/api-client-library/php/contribute).
+Please see the [contributing](.github/CONTRIBUTING.md) page for more information. In particular, we love pull requests - but please make sure to sign the [contributor license agreement](https://developers.google.com/api-client-library/php/contribute).
 
 ## Frequently Asked Questions ##
 

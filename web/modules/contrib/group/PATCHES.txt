@@ -9,3 +9,15 @@ Add permission to view group overview
 Source: https://www.drupal.org/files/issues/group-2943564-2.patch
 
 
+Use VBO together with group permission
+Source: https://www.drupal.org/files/issues/2018-12-18/vbo-and-group-permission-3020883-5.patch
+
+
+Ability to use group tokens in node context
+Source: https://www.drupal.org/files/issues/2018-12-19/group-2774827-41-gnode-tokens.patch
+
+
+group_type and content_plugin of group_content_type are translatable
+Source: https://www.drupal.org/files/issues/2019-05-14/group-content_schema-3054534-2-D8.patch
+
+

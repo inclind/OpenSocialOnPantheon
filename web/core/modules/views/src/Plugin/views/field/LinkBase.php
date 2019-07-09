@@ -123,6 +123,9 @@ abstract class LinkBase extends FieldPluginBase {
    */
   public function render(ResultRow $row) {
     $access = $this->checkUrlAccess($row);
+    if ($access === NULL) {
+      return '';
+    }
     $build = ['#markup' => $access->isAllowed() ? $this->renderLink($row) : ''];
     BubbleableMetadata::createFromObject($access)->applyTo($build);
     return $build;
@@ -134,11 +137,14 @@ abstract class LinkBase extends FieldPluginBase {
    * @param \Drupal\views\ResultRow $row
    *   A view result row.
    *
-   * @return \Drupal\Core\Access\AccessResultInterface
+   * @return \Drupal\Core\Access\AccessResultInterface|null
    *   The access result.
    */
   protected function checkUrlAccess(ResultRow $row) {
     $url = $this->getUrlInfo($row);
+    if (!$url) {
+      return NULL;
+    }
     return $this->accessManager->checkNamedRoute($url->getRouteName(), $url->getRouteParameters(), $this->currentUser(), TRUE);
   }
 
@@ -148,7 +154,7 @@ abstract class LinkBase extends FieldPluginBase {
    * @param \Drupal\views\ResultRow $row
    *   A view result row.
    *
-   * @return \Drupal\Core\Url
+   * @return \Drupal\Core\Url|null
    *   The URI elements of the link.
    */
   abstract protected function getUrlInfo(ResultRow $row);
@@ -164,7 +170,9 @@ abstract class LinkBase extends FieldPluginBase {
    */
   protected function renderLink(ResultRow $row) {
     $this->options['alter']['make_link'] = TRUE;
-    $this->options['alter']['url'] = $this->getUrlInfo($row);
+    if ($urlInfo = $this->getUrlInfo($row)) {
+      $this->options['alter']['url'] = $this->getUrlInfo($row);
+    }
     $text = !empty($this->options['text']) ? $this->sanitizeValue($this->options['text']) : $this->getDefaultLabel();
     $this->addLangcode($row);
     return $text;

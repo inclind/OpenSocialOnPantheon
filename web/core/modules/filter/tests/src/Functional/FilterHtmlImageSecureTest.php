@@ -101,7 +101,7 @@ class FilterHtmlImageSecureTest extends BrowserTestBase {
     $special_filename = 'tést fïle nàme.png';
     $special_image = rawurlencode($special_filename);
     $special_uri = str_replace($test_images[0]->filename, $special_filename, $test_images[0]->uri);
-    file_unmanaged_copy($test_images[0]->uri, $special_uri);
+    \Drupal::service('file_system')->copy($test_images[0]->uri, $special_uri);
 
     // Put a test image in the private files directory.
     $private_uri = str_replace('public://', 'private://', $test_images[0]->uri);

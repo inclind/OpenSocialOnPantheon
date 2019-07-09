@@ -50,8 +50,14 @@ trait GroupRouteContextTrait {
     $route_match = $this->getCurrentRouteMatch();
     
     // See if the route has a group parameter and try to retrieve it.
-    if (($group = $route_match->getParameter('group')) && $group instanceof GroupInterface) {
-      return $group;
+    if ($group = $route_match->getParameter('group')) {
+      if (is_numeric($group)) {
+        $group = Group::load($group);
+      }
+
+      if ($group instanceof GroupInterface) {
+        return $group;
+      }
     }
     // Create a new group to use as context if on the group add form.
     elseif ($route_match->getRouteName() == 'entity.group.add_form') {

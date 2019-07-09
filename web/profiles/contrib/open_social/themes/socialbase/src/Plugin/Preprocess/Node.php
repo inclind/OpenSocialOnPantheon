@@ -210,6 +210,20 @@ class Node extends PreprocessBase {
       }
     }
 
+    // For full view modes we render the links outside of the lazy builder so
+    // we can render only subgroups of links.
+    if ($variables['view_mode'] === 'full' && isset($variables['content']['links']['#lazy_builder'])) {
+      // array_merge ensures other properties are kept (e.g. weight).
+      $variables['content']['links'] = array_merge(
+        $variables['content']['links'],
+        call_user_func_array(
+          $variables['content']['links']['#lazy_builder'][0],
+          $variables['content']['links']['#lazy_builder'][1]
+        )
+      );
+      unset($variables['content']['links']['#lazy_builder']);
+    }
+
     // A landing page has a different way of determining this.
     if ($node->getType() === 'landing_page') {
       $variables['no_image'] = FALSE;
