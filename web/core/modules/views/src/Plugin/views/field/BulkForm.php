@@ -308,11 +308,7 @@ class BulkForm extends FieldPluginBase implements CacheableDependencyInterface {
       // Render checkboxes for all rows.
       $form[$this->options['id']]['#tree'] = TRUE;
       foreach ($this->view->result as $row_index => $row) {
-        if (!$entity = $this->getEntity($row)) {
-          $form[$this->options['id']][$row_index] = [];
-          continue;
-        }
-        $entity = $this->getEntityTranslation($entity, $row);
+        $entity = $this->getEntityTranslation($this->getEntity($row), $row);
 
         $form[$this->options['id']][$row_index] = [
           '#type' => 'checkbox',

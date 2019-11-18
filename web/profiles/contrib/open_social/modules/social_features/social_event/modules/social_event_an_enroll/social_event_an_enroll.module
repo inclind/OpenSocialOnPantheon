@@ -94,13 +94,13 @@ function social_event_an_enroll_preprocess_views_view_field(&$variables) {
 /**
  * Override variables for the social page hero data.
  */
-function social_event_an_enroll_preprocess_page_hero_data(array &$variables) {
+function social_event_an_enroll_preprocess_node(array &$variables) {
   $account = \Drupal::currentUser();
   if ($account->isAnonymous() && !empty($variables['event_enrollment'])) {
 
     $node = $variables['node'];
 
-    if ($node instanceof Node && social_event_an_enroll_is_enabled($node)) {
+    if ($variables['view_mode'] === 'hero' && social_event_an_enroll_is_enabled($node)) {
       $form = \Drupal::formBuilder()->getForm('Drupal\social_event_an_enroll\Form\EventAnEnrollActionForm', $node);
 
       $variables['event_enrollment'] = [
@@ -233,19 +233,6 @@ function social_event_an_enroll_form_alter(&$form, FormStateInterface $form_stat
     $form['field_event_an_enroll']['widget']['value']['#disabled'] = $config->get('event_an_enroll_default_value') && !$config->get('event_an_enroll_allow_edit');
     // Hide checkbox if feature is disabled globally.
     $form['field_event_an_enroll']['#access'] = $config->get('event_an_enroll');
-  }
-
-  if ((isset($form['views_bulk_operations_bulk_form']) || strpos($form_id, 'views_form_event_manage_enrollments_page_manage_enrollments') !== FALSE) && isset($form['output'][0]['#view'])) {
-    $view = &$form['output'][0]['#view'];
-
-    // Unset the action to send emails to LU members which is replaced by
-    // config override.
-    if ($view instanceof ViewExecutable && $view->id() === 'event_manage_enrollments') {
-      $actions = &$form['header']['social_views_bulk_operations_bulk_form_enrollments_1']['actions'];
-      $action = 'social_event_managers_send_email_action';
-      $actions[$action]['#access'] = FALSE;
-      unset($actions['#links'][$action]);
-    }
   }
 }
 

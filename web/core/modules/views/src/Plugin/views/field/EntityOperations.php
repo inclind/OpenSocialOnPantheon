@@ -139,8 +139,9 @@ class EntityOperations extends FieldPluginBase {
    * {@inheritdoc}
    */
   public function render(ResultRow $values) {
-    if (!$entity = $this->getEntity($values)) {
-      return [];
+    $entity = $this->getEntity($values);
+    if (!$entity) {
+      return '';
     }
     $entity = $this->getEntityTranslation($entity, $values);
     $operations = $this->entityTypeManager->getListBuilder($entity->getEntityTypeId())->getOperations($entity);

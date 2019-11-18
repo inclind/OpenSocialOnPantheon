@@ -82,14 +82,13 @@ class Permissions extends PrerenderList {
     $rids = [];
     foreach ($values as $result) {
       $user = $this->getEntity($result);
-      if (!$user) {
-        continue;
-      }
-      $user_rids = $user->getRoles();
-      $uid = $this->getValue($result);
+      if ($user) {
+        $user_rids = $user->getRoles();
+        $uid = $this->getValue($result);
 
-      foreach ($user_rids as $rid) {
-        $rids[$rid][] = $uid;
+        foreach ($user_rids as $rid) {
+          $rids[$rid][] = $uid;
+        }
       }
     }
 

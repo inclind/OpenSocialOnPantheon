@@ -18,6 +18,10 @@ Source: https://www.drupal.org/files/issues/drupal-994360-74-states-checkboxes-c
 
 
 Multiple usages of FieldPluginBase::getEntity do not check for NULL, leading to WSOD
-Source: https://www.drupal.org/files/issues/2019-05-06/drupal-Multiple-usages-of-FieldPluginBase-getEntity-3007424-15.patch
+Source: https://www.drupal.org/files/issues/2019-11-12/3007424-57-8-7-x.patch
+
+
+Default role id causes issues with validation on VBO
+Source: https://www.drupal.org/files/issues/2018-05-24/2974925-default-rid-config-causes-illegal-error.patch
 
 

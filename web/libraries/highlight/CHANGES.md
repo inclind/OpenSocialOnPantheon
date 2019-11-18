@@ -6,6 +6,35 @@ New styles:
 
 Improvements:
 
+## Version 9.15.10
+New languages:
+  none.
+New styles:
+  none.
+Improvements:
+  - support for ruby's squiggly heredoc (#2049)
+  - support css custom properties (#2082)
+  - fix(PureBASIC): update to 5.60 (#1508)
+  - fix(Kotlin): parenthesized types in function declaration (#2107)
+  - fix(Kotlin): nested comment (#2104)
+  - fix(isbl): contains key typo (#2103)
+  - fix(github-gist.css): match Github styles (#2100)
+  - fix(elm): update to latest elm syntax (#2088)
+  - fix: Support highlighting inline HTML and CSS tagged template strings in JS and TS (#2105)
+  - feat(YAML): add YAML to common languages (#1952)
+  - feat(xml): Add support for Windows Script File (.wsf), inline VBScript in XML `script` tags (#1690)
+
+## Version 9.15.9
+
+Improvements:
+ - fix(AutoHotkey): order and extended highlighting (#1579)
+ - fix(Go): correctly highlight hex numbers, rather than stopping at last 'd' or 'f'. (#2060)
+ - fix(Mathematica): Improvements to language (#2065)
+ - fix(Node): Adds SCSS build (#2079)
+ - fix(Rust): update keywords (#2052)
+ - fix(Stata): Added keywords for the meta-analysis suite introduced in Stata 16 (#2081)
+ - fix(Bash): escape double quotes (#2048)
+
 ## Version 9.15.8
 
 New languages:

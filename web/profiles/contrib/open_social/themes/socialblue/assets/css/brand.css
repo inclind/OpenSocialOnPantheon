@@ -280,6 +280,15 @@ blockquote {
   background-color: #1f1f1f;
 }
 
+html:not(.js) .navbar-default .dropdown:focus > a, html:not(.js) .navbar-default .dropdown:hover > a {
+  color: #f3f3f3;
+  background-color: #1f1f1f;
+}
+
+html:not(.js) .navbar-default .dropdown:focus > a .navbar-nav__icon, html:not(.js) .navbar-default .dropdown:hover > a .navbar-nav__icon {
+  fill: #f3f3f3;
+}
+
 .navbar-nav__icon {
   fill: #ffffff;
 }
@@ -359,13 +368,9 @@ blockquote {
   background-color: #1f7ea7 !important;
 }
 
-.marker-cluster-small {
-  background-color: #1f7ea7;
-  opacity: 0.6;
-}
-
+.marker-cluster-small,
 .marker-cluster-small div {
-  background-color: #1f7ea7;
+  background-color: #1f80aa;
 }
 
 .marker-cluster div {
@@ -379,11 +384,11 @@ blockquote {
 }
 
 .leaflet-popup-content .card__text > a {
-  color: #ffffff;
+  color: #33b5e5;
 }
 
 .leaflet-popup-content .card__text > a:after {
-  color: #ffffff;
+  color: #33b5e5;
 }
 
 .card__featured-items .teaser__info svg {
@@ -396,6 +401,36 @@ blockquote {
   fill: #ffc142;
 }
 
+.course__navigation .course_nav-title,
+.course__navigation .course_nav-toggle,
+.course__navigation .course_dividing-line {
+  color: #29abe2;
+}
+
+.course__navigation .course_nav-title .icon {
+  background: #29abe2;
+}
+
+.course__navigation .course_nav-title:hover, .course__navigation .course_nav-title:active, .course__navigation .course_nav-title:focus {
+  color: #ffc142;
+}
+
+.course__navigation .course_nav-title:hover .icon, .course__navigation .course_nav-title:active .icon, .course__navigation .course_nav-title:focus .icon {
+  background: #ffc142;
+}
+
+.course__navigation .course_nav-toggle svg {
+  fill: #29abe2;
+}
+
+.course__navigation .course_nav-toggle:hover, .course__navigation .course_nav-toggle:active, .course__navigation .course_nav-toggle:focus {
+  color: #ffc142;
+}
+
+.course__navigation .course_nav-toggle:hover svg, .course__navigation .course_nav-toggle:active svg, .course__navigation .course_nav-toggle:focus svg {
+  fill: #ffc142;
+}
+
 @media (min-width: 900px) {
   .search-take-over .form-text {
     color: #ffffff;
@@ -405,7 +440,8 @@ blockquote {
     -webkit-box-shadow: 0 2px 0 0 #ffffff;
             box-shadow: 0 2px 0 0 #ffffff;
   }
-  .btn--close-search-take-over svg {
+  .btn--close-search-take-over svg,
+  .search-take-over svg {
     fill: #ffffff;
   }
 }

@@ -20,10 +20,7 @@ class LinkApprove extends LinkBase {
    */
   protected function getUrlInfo(ResultRow $row) {
     $entity = $this->getEntity($row);
-    if (!$entity) {
-      return NULL;
-    }
-    return Url::fromRoute('comment.approve', ['comment' => $entity->id()]);
+    return $entity ? Url::fromRoute('comment.approve', ['comment' => $entity->id()]) : NULL;
   }
 
   /**

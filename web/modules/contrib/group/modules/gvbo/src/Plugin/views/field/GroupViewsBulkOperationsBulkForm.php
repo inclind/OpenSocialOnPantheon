@@ -16,7 +16,11 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpFoundation\RequestStack;
 
 /**
- * Defines the Views Bulk Operations field plugin.
+ * Defines the Groups Views Bulk Operations field plugin.
+ *
+ * @ingroup views_field_handlers
+ *
+ * @ViewsField("group_views_bulk_operations_bulk_form")
  */
 class GroupViewsBulkOperationsBulkForm extends ViewsBulkOperationsBulkForm {
 

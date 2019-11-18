@@ -2,6 +2,7 @@
 
 namespace Drupal\message\Entity;
 
+use Drupal\Core\Annotation\Translation;
 use Drupal\Core\Config\Entity\ConfigEntityBundleBase;
 use Drupal\Core\Entity\EntityStorageInterface;
 use Drupal\Core\Language\Language;
@@ -14,6 +15,12 @@ use Drupal\message\MessageTemplateInterface;
  * @ConfigEntityType(
  *   id = "message_template",
  *   label = @Translation("Message template"),
+ *   label_plural = @Translation("message templates"),
+ *   label_singular = @Translation("message template"),
+ *   label_count = @PluralTranslation(
+ *     singular="@count message template",
+ *     plural="@count message templates"
+ *   ),
  *   config_prefix = "template",
  *   bundle_of = "message",
  *   entity_keys = {
@@ -243,6 +250,13 @@ class MessageTemplate extends ConfigEntityBundleBase implements MessageTemplateI
   /**
    * {@inheritdoc}
    */
+  public function getRawText() {
+    return $this->text;
+  }
+  
+  /**
+   * {@inheritdoc}
+   */
   public function getText($langcode = Language::LANGCODE_NOT_SPECIFIED, $delta = NULL) {
     $text = $this->text;
 
@@ -278,7 +292,7 @@ class MessageTemplate extends ConfigEntityBundleBase implements MessageTemplateI
       $text[$key] = \Drupal::service('renderer')->renderPlain($build);
     }
 
-    if ($delta) {
+    if (isset($delta)) {
       // Return just the delta if it exists. Always wrap in an array here to
       // ensure compatibility with methods calling getText.
       return isset($text[$delta]) ? [$text[$delta]] : [];
@@ -308,6 +322,11 @@ class MessageTemplate extends ConfigEntityBundleBase implements MessageTemplateI
    * {@inheritdoc}
    */
   public function preSave(EntityStorageInterface $storage) {
+    // Don't do anything during config sync.
+    if (\Drupal::isConfigSyncing()) {
+      return;
+    }
+
     $this->text = array_filter($this->text, function ($partial) {
       // Filter out any partials with an empty `value`.
       return !empty($partial['value']);
