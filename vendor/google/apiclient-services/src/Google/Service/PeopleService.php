@@ -45,6 +45,9 @@ class Google_Service_PeopleService extends Google_Service
   /** View your email addresses. */
   const USER_EMAILS_READ =
       "https://www.googleapis.com/auth/user.emails.read";
+  /** See your education, work history and org info. */
+  const USER_ORGANIZATION_READ =
+      "https://www.googleapis.com/auth/user.organization.read";
   /** View your phone numbers. */
   const USER_PHONENUMBERS_READ =
       "https://www.googleapis.com/auth/user.phonenumbers.read";
@@ -291,10 +294,6 @@ class Google_Service_PeopleService extends Google_Service
                   'type' => 'string',
                   'required' => true,
                 ),
-                'sortOrder' => array(
-                  'location' => 'query',
-                  'type' => 'string',
-                ),
                 'requestSyncToken' => array(
                   'location' => 'query',
                   'type' => 'boolean',
@@ -316,6 +315,10 @@ class Google_Service_PeopleService extends Google_Service
                   'type' => 'string',
                 ),
                 'personFields' => array(
+                  'location' => 'query',
+                  'type' => 'string',
+                ),
+                'sortOrder' => array(
                   'location' => 'query',
                   'type' => 'string',
                 ),

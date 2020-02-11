@@ -30,7 +30,6 @@ class RevisionLink extends LinkBase {
         ]) :
         $node->toUrl();
     }
-    return NULL;
   }
 
   /**

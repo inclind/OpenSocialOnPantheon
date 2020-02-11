@@ -384,7 +384,7 @@ android:
   changes:
     - '3.2'
     - 5.0.0
-    - 5.12.0-1
+    - 5.12.0
   label: Android
   search:
     terms:
@@ -1004,7 +1004,7 @@ atlassian:
 atom:
   changes:
     - 5.2.0
-    - 5.12.0-1
+    - 5.12.0
   label: Atom
   search:
     terms:
@@ -1193,7 +1193,7 @@ bacon:
 bahai:
   changes:
     - 5.3.0
-    - 5.12.0-1
+    - 5.12.0
   label: Bahá'í
   search:
     terms:
@@ -1225,7 +1225,7 @@ balance-scale-left:
   changes:
     - 5.0.13
     - 5.9.0
-    - 5.12.0-1
+    - 5.12.0
   label: Balance Scale (Left-Weighted)
   search:
     terms:
@@ -1242,7 +1242,7 @@ balance-scale-right:
   changes:
     - 5.0.13
     - 5.9.0
-    - 5.12.0-1
+    - 5.12.0
   label: Balance Scale (Right-Weighted)
   search:
     terms:
@@ -1380,7 +1380,7 @@ bath:
   changes:
     - '4.7'
     - 5.0.0
-    - 5.12.0-1
+    - 5.12.0
   label: Bath
   search:
     terms:
@@ -2892,7 +2892,7 @@ car-side:
   voted: false
 caravan:
   changes:
-    - 5.12.0-1
+    - 5.12.0
   label: Caravan
   search:
     terms:
@@ -3940,6 +3940,7 @@ clock:
   changes:
     - '1'
     - 5.0.0
+    - 5.12.1
   label: Clock
   search:
     terms:
@@ -4602,7 +4603,7 @@ compress-alt:
   changes:
     - '1'
     - 5.0.0
-    - 5.12.0-1
+    - 5.12.0
   label: Alternate Compress
   search:
     terms:
@@ -5190,6 +5191,16 @@ d-and-d-beyond:
     - brands
   unicode: f6ca
   voted: false
+dailymotion:
+  changes:
+    - 5.12.1
+  label: dailymotion
+  search:
+    terms: []
+  styles:
+    - brands
+  unicode: f952
+  voted: true
 dashcube:
   changes:
     - '4.3'
@@ -5656,7 +5667,7 @@ docker:
 dog:
   changes:
     - 5.4.0
-    - 5.12.0-1
+    - 5.12.0
   label: Dog
   search:
     terms:
@@ -6062,6 +6073,7 @@ edge:
   changes:
     - '4.5'
     - 5.0.0
+    - 5.12.1
   label: Edge Browser
   search:
     terms:
@@ -6250,7 +6262,7 @@ envelope-open-text:
   changes:
     - 5.3.0
     - 5.10.1
-    - 5.12.0-1
+    - 5.12.0
   label: Envelope Open-text
   search:
     terms:
@@ -6498,7 +6510,7 @@ expand-alt:
   changes:
     - '1'
     - 5.0.0
-    - 5.12.0-1
+    - 5.12.0
   label: Alternate Expand
   search:
     terms:
@@ -7400,7 +7412,7 @@ firefox:
     - '4.4'
     - 5.0.0
     - 5.0.1
-    - 5.12.0-1
+    - 5.12.0
   label: Firefox
   search:
     terms:
@@ -7411,7 +7423,7 @@ firefox:
   voted: false
 firefox-browser:
   changes:
-    - 5.12.0-1
+    - 5.12.0
   label: Firefox Browser
   search:
     terms:
@@ -7676,6 +7688,7 @@ folder-plus:
   changes:
     - 5.3.0
     - 5.11.0
+    - 5.12.1
   label: Folder Plus
   search:
     terms:
@@ -7859,7 +7872,7 @@ free-code-camp:
   changes:
     - '4.7'
     - 5.0.0
-    - 5.12.0-1
+    - 5.12.0
   label: freeCodeCamp
   search:
     terms: []
@@ -8937,7 +8950,7 @@ grin-tongue-wink:
     - 5.1.0
     - 5.11.0
     - 5.11.1
-    - 5.12.0-1
+    - 5.12.0
   label: Winking Face With Tongue
   search:
     terms:
@@ -9399,7 +9412,7 @@ hand-spock:
   changes:
     - '4.4'
     - 5.0.0
-    - 5.12.0-1
+    - 5.12.0
   label: Spock (Hand)
   search:
     terms:
@@ -10279,7 +10292,7 @@ id-card-alt:
   voted: false
 ideal:
   changes:
-    - 5.12.0-1
+    - 5.12.0
   label: iDeal
   search:
     terms: []
@@ -10458,6 +10471,16 @@ instagram:
     - brands
   unicode: f16d
   voted: false
+instagram-square:
+  changes:
+    - 5.12.1
+  label: Instagram Square
+  search:
+    terms: []
+  styles:
+    - brands
+  unicode: f955
+  voted: true
 intercom:
   changes:
     - 5.6.0
@@ -12173,7 +12196,7 @@ mercury:
 meteor:
   changes:
     - 5.5.0
-    - 5.12.0-1
+    - 5.12.0
   label: Meteor
   search:
     terms:
@@ -12188,7 +12211,7 @@ meteor:
   voted: false
 microblog:
   changes:
-    - 5.12.0-1
+    - 5.12.0
   label: Micro.blog
   search:
     terms: []
@@ -12403,6 +12426,16 @@ mixcloud:
     - brands
   unicode: f289
   voted: false
+mixer:
+  changes:
+    - 5.12.1
+  label: Mixer
+  search:
+    terms: []
+  styles:
+    - brands
+  unicode: f956
+  voted: true
 mizuni:
   changes:
     - 5.0.0
@@ -13815,7 +13848,7 @@ pied-piper:
     - '4.6'
     - 5.0.0
     - 5.0.10
-    - 5.12.0-1
+    - 5.12.0
   label: Pied Piper Logo
   search:
     terms: []
@@ -13859,7 +13892,7 @@ pied-piper-pp:
   voted: false
 pied-piper-square:
   changes:
-    - 5.12.0-1
+    - 5.12.0
   label: Pied Piper Square Logo (Old)
   search:
     terms: []
@@ -14074,7 +14107,7 @@ plug:
   changes:
     - '4.2'
     - 5.0.0
-    - 5.12.0-1
+    - 5.12.0
   label: Plug
   search:
     terms:
@@ -15101,7 +15134,7 @@ road:
 robot:
   changes:
     - 5.0.13
-    - 5.12.0-1
+    - 5.12.0
   label: Robot
   search:
     terms:
@@ -15118,7 +15151,7 @@ rocket:
     - '3.1'
     - 5.0.0
     - 5.7.0
-    - 5.12.0-1
+    - 5.12.0
   label: rocket
   search:
     terms:
@@ -15345,7 +15378,7 @@ safari:
   changes:
     - '4.4'
     - 5.0.0
-    - 5.12.0-1
+    - 5.12.0
   label: Safari
   search:
     terms:
@@ -15378,7 +15411,7 @@ satellite:
   changes:
     - 5.6.0
     - 5.10.1
-    - 5.12.0-1
+    - 5.12.0
   label: Satellite
   search:
     terms:
@@ -15393,7 +15426,7 @@ satellite:
 satellite-dish:
   changes:
     - 5.6.0
-    - 5.12.0-1
+    - 5.12.0
   label: Satellite Dish
   search:
     terms:
@@ -15403,6 +15436,7 @@ satellite-dish:
       - receiver
       - saucer
       - signal
+      - space
   styles:
     - solid
   unicode: f7c0
@@ -15667,7 +15701,7 @@ servicestack:
 shapes:
   changes:
     - 5.2.0
-    - 5.12.0-1
+    - 5.12.0
   label: Shapes
   search:
     terms:
@@ -15830,6 +15864,16 @@ shoe-prints:
     - solid
   unicode: f54b
   voted: true
+shopify:
+  changes:
+    - 5.12.1
+  label: Shopify
+  search:
+    terms: []
+  styles:
+    - brands
+  unicode: f957
+  voted: false
 shopping-bag:
   changes:
     - '4.5'
@@ -15893,7 +15937,7 @@ shower:
   changes:
     - '4.7'
     - 5.0.0
-    - 5.12.0-1
+    - 5.12.0
   label: Shower
   search:
     terms:
@@ -16832,6 +16876,7 @@ space-shuttle:
       - machine
       - nasa
       - rocket
+      - space
       - transportation
   styles:
     - solid
@@ -18680,7 +18725,7 @@ traffic-light:
   voted: false
 trailer:
   changes:
-    - 5.12.0-1
+    - 5.12.0
   label: Trailer
   search:
     terms:
@@ -19017,7 +19062,7 @@ twitch:
   changes:
     - '4.2'
     - 5.0.0
-    - 5.12.0-1
+    - 5.12.0
   label: Twitch
   search:
     terms: []
@@ -19198,7 +19243,7 @@ uniregistry:
   voted: false
 unity:
   changes:
-    - 5.12.0-1
+    - 5.12.0
   label: Unity 3D
   search:
     terms: []
@@ -19607,7 +19652,7 @@ user-ninja:
 user-nurse:
   changes:
     - 5.7.0
-    - 5.12.0-1
+    - 5.12.0
   label: Nurse
   search:
     terms:

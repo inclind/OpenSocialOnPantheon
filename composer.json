@@ -22,12 +22,11 @@
 
     "drupal/console": "^1",
     "drush/drush": "~8",
-    "goalgorilla/open_social": "dev-8.x-7.x#746ffef",
+    "goalgorilla/open_social": "~8.0",
     "doctrine/cache": "1.6.1",
     "doctrine/collections": "1.4.0",
     "doctrine/common": "2.7.2",
     "doctrine/inflector": "1.1.0",
-    "drupal/admin_toolbar": "^2.0",
     "drupal/redirect": "^1.1",
     "drupal/redis": "^1.2",
     "drupal/search_api_solr": "^1.0",

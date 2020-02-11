@@ -39,9 +39,11 @@ class EntityLink extends LinkBase {
     $template = $this->getEntityLinkTemplate();
     $entity = $this->getEntity($row);
     if ($entity) {
+      if ($this->languageManager->isMultilingual()) {
+        $entity = $this->getEntityTranslation($entity, $row);
+      }
       return $entity->toUrl($template)->setAbsolute($this->options['absolute']);
     }
-    return NULL;
   }
 
   /**

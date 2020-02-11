@@ -121,7 +121,7 @@ class BulkForm extends FieldPluginBase implements CacheableDependencyInterface {
       $configuration,
       $plugin_id,
       $plugin_definition,
-      $container->get('entity.manager'),
+      $container->get('entity_type.manager'),
       $container->get('language_manager'),
       $container->get('messenger'),
       $container->get('entity.repository')
@@ -308,17 +308,23 @@ class BulkForm extends FieldPluginBase implements CacheableDependencyInterface {
       // Render checkboxes for all rows.
       $form[$this->options['id']]['#tree'] = TRUE;
       foreach ($this->view->result as $row_index => $row) {
-        $entity = $this->getEntityTranslation($this->getEntity($row), $row);
+        $entity = $this->getEntity($row);
+        if ($entity) {
+          $entity = $this->getEntityTranslation($entity, $row);
 
-        $form[$this->options['id']][$row_index] = [
-          '#type' => 'checkbox',
-          // We are not able to determine a main "title" for each row, so we can
-          // only output a generic label.
-          '#title' => $this->t('Update this item'),
-          '#title_display' => 'invisible',
-          '#default_value' => !empty($form_state->getValue($this->options['id'])[$row_index]) ? 1 : NULL,
-          '#return_value' => $this->calculateEntityBulkFormKey($entity, $use_revision),
-        ];
+          $form[$this->options['id']][$row_index] = [
+            '#type' => 'checkbox',
+            // We are not able to determine a main "title" for each row, so we
+            // can only output a generic label.
+            '#title' => $this->t('Update this item'),
+            '#title_display' => 'invisible',
+            '#default_value' => !empty($form_state->getValue($this->options['id'])[$row_index]) ? 1 : NULL,
+            '#return_value' => $this->calculateEntityBulkFormKey($entity, $use_revision),
+          ];
+        }
+        else {
+          $form[$this->options['id']][$row_index] = [];
+        }
       }
 
       // Replace the form submit button label.
@@ -422,6 +428,12 @@ class BulkForm extends FieldPluginBase implements CacheableDependencyInterface {
         $entities[$bulk_form_key] = $entity;
       }
 
+      // If there were entities selected but the action isn't allowed on any of
+      // them, we don't need to do anything further.
+      if (!$count) {
+        return;
+      }
+
       $action->execute($entities);
 
       $operation_definition = $action->getPluginDefinition();
@@ -434,11 +446,9 @@ class BulkForm extends FieldPluginBase implements CacheableDependencyInterface {
       else {
         // Don't display the message unless there are some elements affected and
         // there is no confirmation form.
-        if ($count) {
-          $this->messenger->addStatus($this->formatPlural($count, '%action was applied to @count item.', '%action was applied to @count items.', [
-            '%action' => $action->label(),
-          ]));
-        }
+        $this->messenger->addStatus($this->formatPlural($count, '%action was applied to @count item.', '%action was applied to @count items.', [
+          '%action' => $action->label(),
+        ]));
       }
     }
   }
