@@ -53,10 +53,8 @@ class Google_Service_AdExchangeBuyerII_Resource_AccountsProducts extends Google_
    * default.
    * @opt_param string filter An optional PQL query used to query for products.
    * See https://developers.google.com/ad-manager/docs/pqlreference for
-   * documentation about PQL and examples.
-   *
-   * Nested repeated fields, such as product.targetingCriterion.inclusions, cannot
-   * be filtered.
+   * documentation about PQL and examples. Nested repeated fields, such as
+   * product.targetingCriterion.inclusions, cannot be filtered.
    * @return Google_Service_AdExchangeBuyerII_ListProductsResponse
    */
   public function listAccountsProducts($accountId, $optParams = array())

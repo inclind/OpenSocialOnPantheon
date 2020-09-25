@@ -3,36 +3,6 @@
   "description": "Install drops-8 with Composer on Pantheon.",
   "type": "project",
   "license": "GPL-2.0+",
-  "minimum-stability": "dev",
-  "prefer-stable": true,
-  "config": {
-    "platform": {
-      "php": "7.2"
-    }
-  },
-  "autoload": {
-    "classmap": [
-      "scripts/composer/ScriptHandler.php"
-    ]
-  },
-  "require": {
-    "composer/installers": "^1.0.20",
-    "drupal-composer/drupal-scaffold": "^2.5.0",
-    "cweagans/composer-patches": "^1.0",
-
-    "drupal/console": "^1",
-    "drush/drush": "~8",
-    "goalgorilla/open_social": "~8.0",
-    "doctrine/cache": "1.6.1",
-    "doctrine/collections": "1.4.0",
-    "doctrine/common": "2.7.2",
-    "doctrine/inflector": "1.1.0",
-    "drupal/redirect": "^1.1",
-    "drupal/redis": "^1.2",
-    "drupal/search_api_solr": "^1.0",
-    "phenx/php-font-lib": "^0.5",
-    "lsolesen/pel": "0.9.6"
-  },
   "repositories": [
     {
       "type": "composer",
@@ -43,59 +13,112 @@
       "url": "https://asset-packagist.org"
     }
   ],
+  "require": {
+    "php": ">=7.3",
+    "composer/installers": "^1.0.20",
+    "pantheon-systems/drupal-integrations": "^8",
+    "goalgorilla/open_social": "9.2.0",
+    "cweagans/composer-patches": "^1.6.5",
+    "drupal/like_and_dislike": "dev-1.x#e6d48b9 as 1.0.0-alpha2",
+    "drupal/redirect": "1.6 as 1.4",
+    "drupal/redis": "^1.4",
+    "drupal/search_api_solr": "1.5",
+    "phenx/php-font-lib": "^0.5",
+    "lsolesen/pel": "0.9.6",
+    "zaporylie/composer-drupal-optimizations": "^1.0"
+  },
   "require-dev": {
-    "mikey179/vfsstream": "^1.2",
-    "behat/behat": "3.*",
-    "behat/mink": "^1.7",
-    "behat/mink-extension": "*",
-    "behat/mink-goutte-driver": "^1.2",
-    "jcalderonzumba/gastonjs": "^1.0.2",
+    "drush/drush": "^9",
+    "dealerdirect/phpcodesniffer-composer-installer": "^0.5.0",
+    "drupal/coder": "^8.3.1",
+    "drupal/drupal-extension": "^4.1",
+    "drupal/drupal-driver": "^2.1",
     "jcalderonzumba/mink-phantomjs-driver": "^0.3.1",
-    "drupal/drupal-extension": "^3.1",
-    "drush-ops/behat-drush-endpoint": "*",
-    "phpunit/phpunit": "^4.8",
-    "symfony/css-selector": "^2.8"
+    "mikey179/vfsstream": "^1.2",
+    "phpunit/phpunit": "^6.5",
+    "squizlabs/php_codesniffer": "^3.4.0",
+    "symfony/css-selector": "~3.0"
   },
   "conflict": {
     "drupal/drupal": "*"
   },
+  "minimum-stability": "dev",
+  "prefer-stable": true,
+  "autoload": {
+    "classmap": [
+      "scripts/composer/ScriptHandler.php"
+    ]
+  },
   "scripts": {
-    "build-assets": "echo 'No build step defined.'",
-    "drupal-unit-tests": "cd web/core && ../../vendor/bin/phpunit --testsuite=unit --exclude-group Composer,DependencyInjection,PageCache",
+    "build-assets": [
+        "@prepare-for-pantheon",
+        "composer install --optimize-autoloader --no-dev"
+    ],
     "drupal": "drupal --ansi",
     "drupal-scaffold": "DrupalComposer\\DrupalScaffold\\Plugin::scaffold",
+    "lint": "find web/modules/custom web/themes/custom -name '*.php' -exec php -l {} \\;",
+    "code-sniff": [
+        "./vendor/bin/phpcs --standard=Drupal --extensions=php,module,inc,install,test,profile,theme,css,info,txt,md --ignore=node_modules,bower_components,vendor ./web/modules/custom",
+        "./vendor/bin/phpcs --standard=Drupal --extensions=php,module,inc,install,test,profile,theme,css,info,txt,md --ignore=node_modules,bower_components,vendor ./web/themes/custom",
+        "./vendor/bin/phpcs --standard=DrupalPractice --extensions=php,module,inc,install,test,profile,theme,css,info,txt,md --ignore=node_modules,bower_components,vendor ./web/modules/custom",
+        "./vendor/bin/phpcs --standard=DrupalPractice --extensions=php,module,inc,install,test,profile,theme,css,info,txt,md --ignore=node_modules,bower_components,vendor ./web/themes/custom"
+    ],
+    "unit-test": "echo 'No unit test step defined.'",
+    "prepare-for-pantheon": "DrupalProject\\composer\\ScriptHandler::prepareForPantheon",
     "post-install-cmd": [
       "DrupalProject\\composer\\ScriptHandler::createRequiredFiles"
     ],
     "post-update-cmd": [
       "DrupalProject\\composer\\ScriptHandler::createRequiredFiles"
+        ],
+    "post-create-project-cmd": [
+      "DrupalProject\\composer\\ScriptHandler::createRequiredFiles"
     ]
   },
   "extra": {
+    "enable-patching": true,
+    "patches-file": "composer.patches.json",
     "composer-exit-on-patch-failure": true,
+    "patches-ignore": {
+      "goalgorilla/open_social": {
+        "drupal/like_and_dislike": {
+          "Version is upgraded and the patch no longer applies": "https://www.drupal.org/files/issues/2848080-2-preview-fails-on-node.patch"
+        }
+      }
+    },
     "installer-types": [
       "bower-asset",
       "npm-asset"
     ],
     "installer-paths": {
       "web/core": ["type:drupal-core"],
-      "web/modules/contrib/{$name}": ["type:drupal-module"],
-      "web/profiles/contrib/{$name}": ["type:drupal-profile"],
-      "web/themes/contrib/{$name}": ["type:drupal-theme"],
-      "drush/contrib/{$name}": ["type:drupal-drush"],
       "web/libraries/{$name}": [
         "type:drupal-library",
         "type:bower-asset",
         "type:npm-asset"
-      ]
+      ],
+      "web/modules/contrib/{$name}": ["type:drupal-module"],
+      "web/profiles/contrib/{$name}": ["type:drupal-profile"],
+      "web/themes/contrib/{$name}": ["type:drupal-theme"],
+      "drush/Commands/contrib/{$name}": ["type:drupal-drush"],
+      "web/private/scripts/quicksilver/{$name}/": ["type:quicksilver-script"],
+      "web/modules/custom/{$name}": ["type:drupal-custom-module"],
+      "web/themes/custom/{$name}": ["type:drupal-custom-theme"]
     },
-    "enable-patching": true,
     "drupal-scaffold": {
       "source": "https://raw.githubusercontent.com/pantheon-systems/drops-8/{version}/{path}",
       "includes": [
         "sites/default/default.services.pantheon.preproduction.yml",
         "sites/default/settings.pantheon.php"
       ]
+    }
+  },
+  "config": {
+    "optimize-autoloader": true,
+    "preferred-install": "dist",
+    "sort-packages": true,
+    "platform": {
+      "php": "7.3"
     }
   }
 }

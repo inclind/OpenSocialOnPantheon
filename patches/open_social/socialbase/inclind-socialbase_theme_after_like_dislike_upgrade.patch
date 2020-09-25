@@ -1,0 +1,132 @@
+diff --git a/themes/socialbase/assets/js/like_and_dislike_service.min.js b/themes/socialbase/assets/js/like_and_dislike_service.min.js
+index f4efc6067..6d665bdc2 100644
+--- a/themes/socialbase/assets/js/like_and_dislike_service.min.js
++++ b/themes/socialbase/assets/js/like_and_dislike_service.min.js
+@@ -1 +1 @@
+-!function(n,l){function i(){}window.likeAndDislikeService=(i.vote=function(t,a,i){n.ajax({type:"GET",url:drupalSettings.path.baseUrl+"like_and_dislike/"+a+"/"+i+"/"+t,success:function(i){n("#like-container-"+a+"-"+t+" a").get(0).className=i.operation.like,n("#dislike-container-"+a+"-"+t+" a").get(0).className=i.operation.dislike;var e=l.formatPlural(i.likes,"@count like","@count likes");n("#like-container-"+a+"-"+t).nextAll(".vote__count").find("a").html(e).attr("data-dialog-options",'{"title":"'+e+'", "width":"auto"}')}})},i)}(jQuery,Drupal);
+\ No newline at end of file
++!function(o,i){"use strict";function e(){}window.likeAndDislikeService=window.likeAndDislikeService||(e.vote=function(l,a,e){o.ajax({type:"POST",url:drupalSettings.path.baseUrl+"like_and_dislike/"+a+"/"+e+"/"+l,success:function(n){["like","dislike"].forEach(function(e){var t="#"+e+"-container-"+a+"-"+l,i=o(t+" a");0!=i.length&&(n.operation[e]?i.addClass("voted"):i.removeClass("voted"),o(t+" .count").text(n[e+"s"]))});var e=i.formatPlural(n.likes,"@count like","@count likes"),t=o("#like-container-"+a+"-"+l).nextAll(".vote__count").find("a");t.length?t.html(e).attr("data-dialog-options",'{"title":"'+e+'", "width":"auto"}'):o("#like-container-"+a+"-"+l).nextAll(".vote__count").html(e),o(".region.region-highlighted").html("<div class='messages__wrapper layout-container'><div class='messages messages--"+n.message_type+" role='contentinfo'>"+n.message+"</div></div>")}})},e)}(jQuery,Drupal);
+\ No newline at end of file
+diff --git a/themes/socialbase/components/03-molecules/like/like_and_dislike_service.js b/themes/socialbase/components/03-molecules/like/like_and_dislike_service.js
+index 4c370d995..43997f7ea 100644
+--- a/themes/socialbase/components/03-molecules/like/like_and_dislike_service.js
++++ b/themes/socialbase/components/03-molecules/like/like_and_dislike_service.js
+@@ -4,24 +4,45 @@
+  */
+ (function ($, Drupal) {
+
+-  window.likeAndDislikeService = (function() {
++  'use strict';
++
++  window.likeAndDislikeService = window.likeAndDislikeService || (function() {
+     function likeAndDislikeService() {}
+     likeAndDislikeService.vote = function(entity_id, entity_type, tag) {
+       $.ajax({
+-        type: "GET",
++        type: "POST",
+         url: drupalSettings.path.baseUrl + 'like_and_dislike/' + entity_type + '/' + tag + '/' + entity_id,
+         success: function(response) {
+           // Expected response is a json object where likes is the new number
+           // of likes, dislikes is the new number of dislikes, message_type is
+           // the type of message to display ("status" or "warning") and message
+           // is the message to display.
+-          // @todo: Add/remove classes via jQuery.
+-          $('#like-container-' + entity_type + '-' + entity_id + ' a').get(0).className = response.operation.like;
+-          $('#dislike-container-' + entity_type + '-' + entity_id + ' a').get(0).className = response.operation.dislike;
++          ['like', 'dislike'].forEach(function (iconType) {
++            var selector = '#' + iconType + '-container-' + entity_type + '-' + entity_id;
++            var $aTag = $(selector + ' a');
++            if ($aTag.length == 0) {
++              return;
++            }
++            response.operation[iconType] ? $aTag.addClass('voted') : $aTag.removeClass('voted');
++            $(selector + ' .count').text(response[iconType + 's']);
++          });
+
+           // Updates the likes and dislikes count.
+           var likeText = Drupal.formatPlural(response.likes, "@count like", "@count likes");
+-          $('#like-container-' + entity_type + '-' + entity_id).nextAll('.vote__count').find('a').html(likeText).attr('data-dialog-options', '{"title":"' + likeText + '", "width":"auto"}');
++          var voteCountLink = $('#like-container-' + entity_type + '-' + entity_id).nextAll('.vote__count').find('a');
++
++          if (voteCountLink.length) {
++            voteCountLink.html(likeText).attr('data-dialog-options', '{"title":"' + likeText + '", "width":"auto"}');
++          }
++          else {
++            $('#like-container-' + entity_type + '-' + entity_id).nextAll('.vote__count').html(likeText);
++          }
++
++          // Display a message whether the vote was registered or an error
++          // happened.
++          // @todo - this will work only for case when theme has messages in
++          // highlighted region.
++          $('.region.region-highlighted').html("<div class='messages__wrapper layout-container'><div class='messages messages--" + response.message_type + " role='contentinfo'>" + response.message + "</div></div>");
+         }
+       });
+     };
+diff --git a/themes/socialbase/templates/like/like-and-dislike-icons.html.twig b/themes/socialbase/templates/like/like-and-dislike-icons.html.twig
+index 514642483..0f63437da 100644
+--- a/themes/socialbase/templates/like/like-and-dislike-icons.html.twig
++++ b/themes/socialbase/templates/like/like-and-dislike-icons.html.twig
+@@ -16,29 +16,41 @@
+  */
+ #}
+ 
++{# {{ likes }} variable is being set only after AJAX vote call #}
++{% if likes is not defined %}
++    {% set likes = icons.like.count %}
++{% endif %}
++
+ <div class="vote-widget vote-widget--like-and-dislike">
+-  <div class="vote__wrapper">
+-    <div class="vote-like type-{{ entity_type }}" id="like-container-{{ entity_type }}-{{ entity_id }}">
+-      <a {{ like_attributes }} >
+-        <svg class="icon-vote">
+-          <use xlink:href="#icon-like"></use>
+-        </svg>
+-      </a>
+-    </div>
++    <div class="vote__wrapper">
++        {% for type, icon in icons %}
++            <div class="vote-{{ type }} type-{{ entity_type }}"
++                 id="{{ type }}-container-{{ entity_type }}-{{ entity_id }}">
++                {% if type == 'like' %}
++                    <a {{ icon.attributes }} >
++                        <svg class="icon-vote">
++                            <use xlink:href="#icon-like"></use>
++                        </svg>
++                    </a>
+ 
+-    <div class="vote-dislike type-{{ entity_type }}" id="dislike-container-{{ entity_type }}-{{ entity_id }}">
+-      <a {{ dislike_attributes }}>Dislike</a>
+-      <span class="count">{{ dislikes }}</span>
+-    </div>
++                {% else %}
++                    <a {{ icon.attributes }}>{{ icon.label }}</a>
++                    <span class="count">{{ icon.count }}</span>
++                {% endif %}
++            </div>
++        {% endfor %}
+ 
+-    <div class="vote__count">
+-      {% if logged_in %}
+-      <a class="use-ajax" data-dialog-options='{"title":"{{ modal_title }}","width":"auto"}' data-dialog-type="modal" href="/wholiked/{{ entity_type }}/{{ entity_id }}">
+-        {% trans %}{{ likes }} like {% plural likes %} {{ likes }} likes{% endtrans %}
+-      </a>
+-      {% else %}
+-        {% trans %}{{ likes }} like {% plural likes %} {{ likes }} likes{% endtrans %}
+-      {% endif %}
++        <div class="vote__count">
++            {% if logged_in %}
++                <a class="use-ajax"
++                   data-dialog-options='{"title":"{{ modal_title }}","width":"auto"}'
++                   data-dialog-type="modal"
++                   href="/wholiked/{{ entity_type }}/{{ entity_id }}">
++                    {% trans %}{{ likes }} like {% plural likes %} {{ likes }} likes{% endtrans %}
++                </a>
++            {% else %}
++                {% trans %}{{ likes }} like {% plural likes %} {{ likes }} likes{% endtrans %}
++            {% endif %}
++        </div>
+     </div>
+-  </div>
+ </div>

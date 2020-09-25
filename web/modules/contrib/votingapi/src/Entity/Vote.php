@@ -208,13 +208,12 @@ class Vote extends ContentEntityBase implements VoteInterface {
 
     $fields['timestamp'] = BaseFieldDefinition::create('created')
       ->setLabel(t('Created'))
-      ->setDescription(t('The time that the entity was created.'))
-      ->setDefaultValueCallback('time');
+      ->setDescription(t('The time that the entity was created.'));
 
     $fields['vote_source'] = BaseFieldDefinition::create('string')
       ->setLabel(t('Vote Source'))
       ->setDescription(t('The IP address hash from the user who submitted the vote.'))
-      ->setDefaultValueCallback('Drupal\votingapi\Entity\Vote::getCurrentIp')
+      ->setDefaultValueCallback('Drupal\votingapi\Entity\Vote::getVoteSource')
       ->setSettings([
         'max_length' => 255,
       ]);
@@ -223,7 +222,17 @@ class Vote extends ContentEntityBase implements VoteInterface {
   }
 
   /**
-   * Default value callback for 'user' base field definition.
+   * Get user IP hash value.
+   *
+   * @return string
+   *   Hash value.
+   */
+  public static function getCurrentIp() {
+    return hash('sha256', serialize(\Drupal::request()->getClientIp()));
+  }
+
+  /**
+   * Default value callback for 'vote source' base field definition.
    *
    * @see ::baseFieldDefinitions()
    *
@@ -235,15 +244,68 @@ class Vote extends ContentEntityBase implements VoteInterface {
   }
 
   /**
-   * Default value callback for 'user' base field definition.
+   * Default value callback for 'source' base field definition.
    *
    * @see ::baseFieldDefinitions()
    *
    * @return array
    *   An array of default values.
    */
-  public static function getCurrentIp() {
-    return hash('sha256', serialize(\Drupal::request()->getClientIp()));
+  public static function getVoteSource() {
+    $source = self::getCurrentIp();
+    $uid = \Drupal::currentUser()->id();
+    $source_config = \Drupal::config('votingapi.settings')->get('anonymous_vote_restrictions');
+
+    if ($source_config && !$uid) {
+      switch ($source_config) {
+        case 'session':
+          $session = \Drupal::service('session');
+          // Ensure something is in $_SESSION, otherwise the session ID will
+          // not persist.
+          // TODO: Replace this with something cleaner once core provides it.
+          // See https://www.drupal.org/node/2865991.
+          $_SESSION['voteapi_anonym_session'] = TRUE;
+          $session->set('voteapi_anonym_session', TRUE);
+          $session->start();
+
+          $session_id = $session->getId();
+          $source = $source . '__session__' . $session_id;
+          break;
+        }
+    }
+    return $source;
+  }
+
+  function save() {
+    if (empty($this->getOwnerId()) || $this->getOwnerId() == 0) {
+      $window = \Drupal::config('votingapi.settings')->get('anonymous_window');
+    }
+    else {
+      $window = \Drupal::config('votingapi.settings')->get('user_window');
+    }
+
+    $votes_query = \Drupal::entityQuery('vote')
+      ->condition('type', $this->get('type')->target_id)
+      ->condition('entity_type', $this->getVotedEntityType())
+      ->condition('entity_id', $this->getVotedEntityId())
+      ->condition('user_id', $this->getOwnerId())
+      ->condition('vote_source', $this->getSource());
+
+    if ($window >= 0) {
+      $timestamp = REQUEST_TIME - $window;
+      $votes_query->condition('timestamp', $timestamp, '>');
+    }
+    $votes_id = $votes_query->execute();
+
+    if (!empty($votes_id)) {
+      $Votes = $this->entityTypeManager()
+        ->getStorage('vote')
+        ->loadMultiple($votes_id);
+      foreach ($Votes as $Vote) {
+        $Vote->delete();
+      }
+    }
+    return parent::save();
   }
 
   /**

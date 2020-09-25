@@ -1,0 +1,344 @@
+diff --git a/modules/custom/activity_basics/activity_basics.module b/modules/custom/activity_basics/activity_basics.module
+index e04081dd9..7661befbb 100644
+--- a/modules/custom/activity_basics/activity_basics.module
++++ b/modules/custom/activity_basics/activity_basics.module
+@@ -25,9 +25,17 @@ function activity_basics_entity_update(EntityInterface $entity) {
+
+ /**
+  * Implements hook_social_group_move().
++ *
++ * @param \Drupal\Core\Entity\EntityInterface|\Drupal\node\NodeInterface $node
++ *   The entity: either a Node or Social Post.
++ * @param bool $post_move
++ *   Indicates if the change relates to Social Post entity, as it doesn't have
++ *   any connected GroupContent.
+  */
+-function activity_basics_social_group_move(NodeInterface $node) {
+-  $node->setCreatedTime($node->getChangedTime());
++function activity_basics_social_group_move(EntityInterface $node, $post_move = FALSE) {
++  if ($node->getEntityTypeId() != 'post') {
++    $node->setCreatedTime($node->getChangedTime());
++  }
+
+   // If the node is placed within a new group, we add the move_entity_action
+   // activity.
+@@ -38,7 +46,18 @@ function activity_basics_social_group_move(NodeInterface $node) {
+   // If the node is placed from a group in to the community, we add the
+   // create_node-bundle_community activity.
+   if (empty($group_contents)) {
+-    _activity_basics_entity_action($node, 'create_entitiy_action');
++    if ($node->getEntityTypeId() == 'post' && $post_move) {
++      $val = $node->get('field_recipient_group')->getValue();
++      if (!empty($val)) {
++        _activity_basics_entity_action($node, 'move_entity_action');
++      }
++      else {
++        _activity_basics_entity_action($node, 'create_entitiy_action');
++      }
++    }
++    else {
++      _activity_basics_entity_action($node, 'create_entitiy_action');
++    }
+   }
+ }
+
+diff --git a/modules/custom/activity_logger/src/Service/ActivityLoggerFactory.php b/modules/custom/activity_logger/src/Service/ActivityLoggerFactory.php
+index 20cd9a403..69b8f1751 100644
+--- a/modules/custom/activity_logger/src/Service/ActivityLoggerFactory.php
++++ b/modules/custom/activity_logger/src/Service/ActivityLoggerFactory.php
+@@ -230,6 +230,8 @@ class ActivityLoggerFactory {
+     // check if either create_bundle_group or move_content is already there
+     // before we add another message that content is created in a group.
+     $types = [
++      'moved_post_between_groups',
++      'create_post_group',
+       'moved_content_between_groups',
+       'create_topic_group',
+       'create_event_group',
+@@ -250,9 +252,15 @@ class ActivityLoggerFactory {
+     $allowed_duplicates = ['moved_content_between_groups'];
+     \Drupal::moduleHandler()->alter('activity_allowed_duplicates', $allowed_duplicates);
+
+-    if (!empty($ids) && !in_array($message_type, $allowed_duplicates)) {
++    if ($related_object['target_type'] == 'node' && !empty($ids)
++      && $message_type != 'moved_content_between_groups') {
+       $exists = TRUE;
+     }
++    elseif ($related_object['target_type'] == 'post' && !empty($ids)
++      && $message_type != 'moved_post_between_groups') {
++      $exists = TRUE;
++    }
++
+     return $exists;
+   }
+
+diff --git a/modules/social_features/social_group/social_group.module b/modules/social_features/social_group/social_group.module
+index af97ea6a2..64a0eb551 100644
+--- a/modules/social_features/social_group/social_group.module
++++ b/modules/social_features/social_group/social_group.module
+@@ -814,6 +814,39 @@ function social_group_form_alter(&$form, FormStateInterface $form_state, $form_i
+       }
+     }
+   }
++
++  if (isset($form['#entity_type']) && in_array($form['#entity_type'], [
++      'node',
++      'post',
++    ])) {
++    if (isset($form['groups']) || isset($form['field_recipient_group'])) {
++      $change_fieldgroup_titles = [
++        'group_topic_visibility',
++        'group_event_visibility',
++      ];
++      foreach ($change_fieldgroup_titles as $fieldgroup_title) {
++        if (isset($form['#fieldgroups'][$fieldgroup_title])) {
++          $form['#fieldgroups'][$fieldgroup_title]->label = (string) t('Group and visibility');
++        }
++      }
++      // Lets remove the original submit function in favor of this submit.
++      foreach ($form['actions']['submit']['#submit'] as $submit_key => $submit_function) {
++        if ($submit_function === 'group_content_entity_submit') {
++          unset($form['actions']['submit']['#submit'][$submit_key]);
++        }
++      }
++
++      /* @var \Drupal\node\Entity\Node $node */
++      $node = $form_state->getFormObject()->getEntity();
++      // Store if the node is new or not.
++      $form['is_new'] = [
++        '#type' => 'value',
++        '#value' => $node->isNew(),
++      ];
++
++      $form['actions']['submit']['#submit'][] = 'social_group_save_group_from_node';
++    }
++  }
+ }
+
+ /**
+@@ -1627,43 +1660,6 @@ function social_group_entity_base_field_info_alter(&$fields, EntityTypeInterface
+   }
+ }
+
+-/**
+- * Implements hook_form_FORM_ID_alter().
+- *
+- * Make sure the correct group is saved when group is selected on node form.
+- */
+-function social_group_form_node_form_alter(&$form, FormStateInterface $form_state) {
+-  if (isset($form['#entity_type']) && $form['#entity_type'] === 'node') {
+-    if (isset($form['groups'])) {
+-      $change_fieldgroup_titles = [
+-        'group_topic_visibility',
+-        'group_event_visibility',
+-      ];
+-      foreach ($change_fieldgroup_titles as $fieldgroup_title) {
+-        if (isset($form['#fieldgroups'][$fieldgroup_title])) {
+-          $form['#fieldgroups'][$fieldgroup_title]->label = (string) t('Group and visibility');
+-        }
+-      }
+-      // Lets remove the original submit function in favor of this submit.
+-      foreach ($form['actions']['submit']['#submit'] as $submit_key => $submit_function) {
+-        if ($submit_function === 'group_content_entity_submit') {
+-          unset($form['actions']['submit']['#submit'][$submit_key]);
+-        }
+-      }
+-
+-      /* @var \Drupal\node\Entity\Node $node */
+-      $node = $form_state->getFormObject()->getEntity();
+-      // Store if the node is new or not.
+-      $form['is_new'] = [
+-        '#type' => 'value',
+-        '#value' => $node->isNew(),
+-      ];
+-
+-      $form['actions']['submit']['#submit'][] = 'social_group_save_group_from_node';
+-    }
+-  }
+-}
+-
+ /**
+  * Form submit to save the group from a node form.
+  *
+@@ -1679,17 +1675,41 @@ function social_group_save_group_from_node(array $form, FormStateInterface $form
+   // Check if the created node is new or updated.
+   $is_new = NULL !== $form_state->getValue('is_new') ? $form_state->getValue('is_new') : FALSE;
+
++  // Social Posts don't have a special "edit" form, so, if it's new - don't proceed:
++  if ($form['#form_id'] === 'social_post_entity_form' && $is_new) {
++    return;
++  }
++
+   $original_groups = [];
+   $groups_to_add = [];
+   $groups_to_remove = [];
+-  foreach ($form_state->getValue('groups') as $new_group_key => $new_group) {
+-    $groups_to_add[$new_group['target_id']] = $new_group['target_id'];
++
++  if (isset($form['groups'])) {
++    $field = 'groups';
++  }
++  elseif (isset($form['field_recipient_group'])) {
++    $field = 'field_recipient_group';
++  }
++
++  foreach ($form_state->getValue($field) as $new_group_key => $new_group) {
++    if (!empty($new_group['target_id'])) {
++      $groups_to_add[$new_group['target_id']] = $new_group['target_id'];
++    }
+   }
++
+   // The node already exist so lets also change the logic accordingly,
+   // only if there is already a group that needs to be removed.
+-  if (!empty($form['groups']['widget']['#default_value']) &&
+-    $form['#form_id'] === 'node_' . $node->bundle() . '_edit_form') {
+-    $original_groups = $form['groups']['widget']['#default_value'];
++  if ($form['#form_id'] === 'node_' . $node->bundle() . '_edit_form'
++      || $form['#form_id'] === 'social_post_entity_form') {
++    // If widget is a List type:
++    if (isset($form[$field]['widget']['#default_value'])) {
++      $original_groups = $form[$field]['widget']['#default_value'];
++    }
++    // If widget is Autocomplete type:
++    elseif (isset($form[$field]['widget'][0]['target_id']['#default_value'])) {
++      $original_groups = [$form[$field]['widget'][0]['target_id']['#default_value']->id()];
++    }
++
+     foreach ($original_groups as $original_group_key => $original_group) {
+       if (!in_array($original_group, $groups_to_add)) {
+         $groups_to_remove[$original_group] = $original_group;
+diff --git a/modules/social_features/social_group/src/SetGroupsForNodeService.php b/modules/social_features/social_group/src/SetGroupsForNodeService.php
+index 66ded6e64..5634a6aea 100644
+--- a/modules/social_features/social_group/src/SetGroupsForNodeService.php
++++ b/modules/social_features/social_group/src/SetGroupsForNodeService.php
+@@ -45,11 +45,14 @@ class SetGroupsForNodeService {
+   /**
+    * Save groups for a given node.
+    *
++   * @param \Drupal\Core\Entity\EntityInterface|\Drupal\node\NodeInterface $node
++   *   The entity: either a Node or Social Post.
++   *
+    * @throws \Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException
+    * @throws \Drupal\Core\Entity\EntityStorageException
+    * @throws \Drupal\Component\Plugin\Exception\PluginNotFoundException
+    */
+-  public function setGroupsForNode(NodeInterface $node, array $groups_to_remove, array $groups_to_add, array $original_groups = [], $is_new = FALSE) {
++  public function setGroupsForNode($node, array $groups_to_remove, array $groups_to_add, array $original_groups = [], $is_new = FALSE) {
+     $moved = FALSE;
+
+     // If we don't have to add or remove groups, we don't need to move anything.
+@@ -63,14 +66,14 @@ class SetGroupsForNodeService {
+     if ((empty($original_groups) || $original_groups != $groups_to_add)) {
+       $entity_query = $this->entityTypeManager->getStorage('activity')->getQuery();
+       $entity_query->condition('field_activity_entity.target_id', $node->id(), '=');
+-      $entity_query->condition('field_activity_entity.target_type', 'node', '=');
++      $entity_query->condition('field_activity_entity.target_type', $node->getEntityTypeId(), '=');
+
+       // 1. From Group -> Community OR Group.
+       // If there are original groups, it means content is removed from
+       // inside a group. So we can remove the create_node-bundle_group
+       // message from the streams.
+       if (!empty($original_groups)) {
+-        $template = 'create_' . $node->bundle() . '_group';
++        $template = ($node->getEntityTypeId() == 'post') ? 'create_post_group' : 'create_' . $node->bundle() . '_group';
+         $messages = $this->entityTypeManager->getStorage('message')
+           ->loadByProperties(['template' => $template]);
+
+@@ -87,7 +90,7 @@ class SetGroupsForNodeService {
+       // in to a group and we remove the "create_node-bundle_community
+       // message from the streams.
+       elseif (empty($original_groups) && !empty($groups_to_add)) {
+-        $template = 'create_' . $node->bundle() . '_community';
++        $template = ($node->getEntityTypeId() == 'post') ? 'create_post_community' : 'create_' . $node->bundle() . '_community';
+         $messages = $this->entityTypeManager->getStorage('message')
+           ->loadByProperties(['template' => $template]);
+
+@@ -103,17 +106,55 @@ class SetGroupsForNodeService {
+       if (!empty($ids = $entity_query->execute())) {
+         $controller = $this->entityTypeManager->getStorage('activity');
+         $controller->delete($controller->loadMultiple($ids));
++
++        // When moving:   From Community -> GROUP clean up original Community
++        // message, so that Activity can be re-created later if all Groups are
++        // removed.
++        if ($template == 'create_' . $node->bundle() . '_community' || $template == 'create_post_community') {
++          $query_msg = \Drupal::entityQuery('message');
++          $query_msg->condition('template', $template);
++          $query_msg->condition('field_message_related_object.target_id', $node->id());
++          $query_msg->condition('field_message_related_object.target_type', $node->getEntityTypeId());
++          $query_msg->condition('field_message_context', 'community_activity_context');
++          $query_msg->condition('uid', $node->getOwnerId());
++          $query_msg->accessCheck(FALSE);
++          $msg_ids = $query_msg->execute();
++
++          if (!empty($msg_ids)) {
++            $controller_msg = $this->entityTypeManager->getStorage('message');
++            $controller_msg->delete($controller->loadMultiple($msg_ids));
++          }
++        }
+       }
+
+       // Make sure to delete all activity items connected to the moved content
+       // template.
+       if ($moved) {
++        $tpl = 'moved_content_between_groups';
++
++        if ($node->getEntityTypeId() == 'post') {
++          $tpl = 'moved_post_between_groups';
++        }
+         $messages = $this->entityTypeManager->getStorage('message')
+-          ->loadByProperties(['template' => 'moved_content_between_groups']);
++          ->loadByProperties(['template' => $tpl]);
+
+         // Make sure we have a message template to work with.
+         if ($messages) {
+-          $entity_query->condition('field_activity_message.target_id', array_keys($messages), 'IN');
++
++          if ($node->getEntityTypeId() == 'post') {
++            $entity_query_posts = $this->entityTypeManager->getStorage('activity')->getQuery();
++            $entity_query_posts->condition('field_activity_entity.target_id', $node->id(), '=');
++            $entity_query_posts->condition('field_activity_entity.target_type', $node->getEntityTypeId(), '=');
++            $entity_query_posts->condition('field_activity_message.target_id', array_keys($messages), 'IN');
++            // Delete all activity items connected to our query.
++            if (!empty($ids = $entity_query_posts->execute())) {
++              $controller = $this->entityTypeManager->getStorage('activity');
++              $controller->delete($controller->loadMultiple($ids));
++            }
++          }
++          else {
++            $entity_query->condition('field_activity_message.target_id', array_keys($messages), 'IN');
++          }
+         }
+
+         // Delete all activity items connected to our query.
+@@ -126,7 +167,7 @@ class SetGroupsForNodeService {
+
+     // Remove all the group content references from the Group as well if we
+     // moved it out of the group.
+-    if (!empty($groups_to_remove)) {
++    if ($node instanceof NodeInterface && !empty($groups_to_remove)) {
+       $groups = Group::loadMultiple($groups_to_remove);
+       foreach ($groups as $group) {
+         self::removeGroupContent($node, $group);
+@@ -134,7 +175,7 @@ class SetGroupsForNodeService {
+     }
+
+     // Add the content to the Group if we placed it in a group.
+-    if (!empty($groups_to_add)) {
++    if ($node instanceof NodeInterface && !empty($groups_to_add)) {
+       $groups = Group::loadMultiple($groups_to_add);
+       foreach ($groups as $group) {
+         self::addGroupContent($node, $group);
+@@ -144,10 +185,11 @@ class SetGroupsForNodeService {
+     // Invoke hook_social_group_move if the content is not new.
+     if ($moved && !$is_new) {
+       $hook = 'social_group_move';
++      $move_post = $node->getEntityTypeId() == 'post' ? TRUE : FALSE;
+ 
+       foreach ($this->moduleHandler->getImplementations($hook) as $module) {
+         $function = $module . '_' . $hook;
+-        $function($node);
++        $function($node, $move_post);
+       }
+     }
+ 

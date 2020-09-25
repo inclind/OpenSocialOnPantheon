@@ -5,7 +5,9 @@
  * Installation code for the activity_creator module.
  */
 
+use Drupal\activity_creator\ActivityInterface;
 use Drupal\Core\Database\Database;
+use Drupal\Core\Site\Settings;
 
 /**
  * Implements hook_schema().
@@ -42,6 +44,18 @@ function activity_creator_schema() {
   ];
 
   return $schema;
+}
+
+/**
+ * Implements hook_update_dependencies().
+ */
+function activity_creator_update_dependencies() {
+  // New config changes should run after the Update Helper module is enabled.
+  $dependencies['activity_creator'][8801] = [
+    'social_core' => 8805,
+  ];
+
+  return $dependencies;
 }
 
 /**
@@ -105,5 +119,79 @@ function activity_creator_update_8002() {
   catch (\PDOException $exception) {
     \Drupal::logger('default')->error($exception->getMessage());
     $txn->rollBack();
+  }
+}
+
+/**
+ * Update cardinality for field_activity_recipient_user.
+ *
+ * After features removal accidentally the cardinality was set to 1 again,
+ * due to #3087083 it should be set to UNLIMITED so one activity can be
+ * send to multiple users. Noticed in #3125732.
+ */
+function activity_creator_update_8801() {
+  /** @var \Drupal\update_helper\Updater $updateHelper */
+  $updateHelper = \Drupal::service('update_helper.updater');
+
+  // Execute configuration update definitions with logging of success.
+  $updateHelper->executeUpdate('activity_creator', 'activity_creator_update_8801');
+
+  // Output logged messages to related channel of update execution.
+  return $updateHelper->logger()->output();
+}
+
+/**
+ * Remove activities notification status if related entity not exist.
+ */
+function activity_creator_update_8802(&$sandbox) {
+  $database = Drupal::database();
+  if (!isset($sandbox['total'])) {
+    $query = $database->select('activity_notification_status', 'ans');
+    $query->addExpression('COUNT(*)');
+    $count = $query->execute()->fetchField();
+    $sandbox['total'] = $count;
+    $sandbox['current'] = 0;
+  }
+
+  // Activities per one batch operation.
+  $activities_per_batch = Settings::get('activity_update_batch_size', 100);
+
+  // Get activity IDs.
+  $aids = $database
+    ->select('activity_notification_status', 'ans')
+    ->fields('ans', ['aid'])
+    ->range($sandbox['current'], $sandbox['current'] + $activities_per_batch)
+    ->execute()
+    ->fetchCol();
+
+  // Get activity storage.
+  $activity_storage = $activity = Drupal::entityTypeManager()
+    ->getStorage('activity');
+
+  foreach ($aids as $aid) {
+    /** @var \Drupal\activity_creator\ActivityInterface $activity */
+    $activity = $activity_storage->load($aid);
+
+    if (!$activity instanceof ActivityInterface) {
+      $aids_for_delete[] = $aid;
+    }
+    elseif (is_null($activity->getRelatedEntity())) {
+      $activity_storage->delete([$activity]);
+      $aids_for_delete[] = $aid;
+    }
+
+    $sandbox['current']++;
+  }
+
+  if (!empty($aids_for_delete)) {
+    Drupal::service('activity_creator.activity_notifications')
+      ->deleteNotificationsbyIds($aids_for_delete);
+  }
+
+  if ($sandbox['total'] == 0) {
+    $sandbox['#finished'] = 1;
+  }
+  else {
+    $sandbox['#finished'] = ($sandbox['current'] / $sandbox['total']);
   }
 }

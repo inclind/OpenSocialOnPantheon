@@ -148,15 +148,15 @@ class Google_Service_CloudAsset extends Google_Service
                   'type' => 'string',
                   'required' => true,
                 ),
+                'readTimeWindow.startTime' => array(
+                  'location' => 'query',
+                  'type' => 'string',
+                ),
                 'contentType' => array(
                   'location' => 'query',
                   'type' => 'string',
                 ),
                 'readTimeWindow.endTime' => array(
-                  'location' => 'query',
-                  'type' => 'string',
-                ),
-                'readTimeWindow.startTime' => array(
                   'location' => 'query',
                   'type' => 'string',
                 ),
@@ -174,6 +174,59 @@ class Google_Service_CloudAsset extends Google_Service
                   'location' => 'path',
                   'type' => 'string',
                   'required' => true,
+                ),
+              ),
+            ),'searchAllIamPolicies' => array(
+              'path' => 'v1/{+scope}:searchAllIamPolicies',
+              'httpMethod' => 'GET',
+              'parameters' => array(
+                'scope' => array(
+                  'location' => 'path',
+                  'type' => 'string',
+                  'required' => true,
+                ),
+                'pageSize' => array(
+                  'location' => 'query',
+                  'type' => 'integer',
+                ),
+                'pageToken' => array(
+                  'location' => 'query',
+                  'type' => 'string',
+                ),
+                'query' => array(
+                  'location' => 'query',
+                  'type' => 'string',
+                ),
+              ),
+            ),'searchAllResources' => array(
+              'path' => 'v1/{+scope}:searchAllResources',
+              'httpMethod' => 'GET',
+              'parameters' => array(
+                'scope' => array(
+                  'location' => 'path',
+                  'type' => 'string',
+                  'required' => true,
+                ),
+                'query' => array(
+                  'location' => 'query',
+                  'type' => 'string',
+                ),
+                'pageSize' => array(
+                  'location' => 'query',
+                  'type' => 'integer',
+                ),
+                'orderBy' => array(
+                  'location' => 'query',
+                  'type' => 'string',
+                ),
+                'assetTypes' => array(
+                  'location' => 'query',
+                  'type' => 'string',
+                  'repeated' => true,
+                ),
+                'pageToken' => array(
+                  'location' => 'query',
+                  'type' => 'string',
                 ),
               ),
             ),

@@ -15,3 +15,9 @@ entity.post.delete_form:
   base_route:  entity.post.canonical
   title: 'Delete'
   weight: 10
+
+entity.post.moderated_content:
+  title: 'Moderated posts'
+  route_name: social_post.admin_moderated_posts
+  parent_id: system.admin_content
+  weight: 2

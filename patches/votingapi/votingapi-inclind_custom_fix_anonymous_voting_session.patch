@@ -1,0 +1,171 @@
+diff --git a/config/install/votingapi.settings.yml b/config/install/votingapi.settings.yml
+index 3fe500f..9cfe6c5 100644
+--- a/config/install/votingapi.settings.yml
++++ b/config/install/votingapi.settings.yml
+@@ -2,3 +2,4 @@ anonymous_window: 86400
+ user_window: -1
+ calculation_schedule: 'immediate'
+ delete_everywhere: false
++anonymous_vote_restrictions: 'ip'
+diff --git a/config/schema/votingapi.schema.yml b/config/schema/votingapi.schema.yml
+index c47b363..a6a2de7 100644
+--- a/config/schema/votingapi.schema.yml
++++ b/config/schema/votingapi.schema.yml
+@@ -14,6 +14,9 @@ votingapi.settings:
+     delete_everywhere:
+       type: boolean
+       label: 'Delete everywhere'
++    anonymous_vote_restrictions:
++      type: string
++      label: 'Anonymous vote restrictions'
+
+ votingapi.vote_type.*:
+   type: config_entity
+diff --git a/src/Entity/Vote.php b/src/Entity/Vote.php
+index d83b9c3..21667a3 100644
+--- a/src/Entity/Vote.php
++++ b/src/Entity/Vote.php
+@@ -214,7 +214,7 @@ class Vote extends ContentEntityBase implements VoteInterface {
+     $fields['vote_source'] = BaseFieldDefinition::create('string')
+       ->setLabel(t('Vote Source'))
+       ->setDescription(t('The IP address hash from the user who submitted the vote.'))
+-      ->setDefaultValueCallback('Drupal\votingapi\Entity\Vote::getCurrentIp')
++      ->setDefaultValueCallback('Drupal\votingapi\Entity\Vote::getVoteSource')
+       ->setSettings([
+         'max_length' => 255,
+       ]);
+@@ -223,7 +223,17 @@ class Vote extends ContentEntityBase implements VoteInterface {
+   }
+
+   /**
+-   * Default value callback for 'user' base field definition.
++   * Get user IP hash value.
++   *
++   * @return string
++   *   Hash value.
++   */
++  public static function getCurrentIp() {
++    return hash('sha256', serialize(\Drupal::request()->getClientIp()));
++  }
++
++  /**
++   * Default value callback for 'vote source' base field definition.
+    *
+    * @see ::baseFieldDefinitions()
+    *
+@@ -235,15 +245,68 @@ class Vote extends ContentEntityBase implements VoteInterface {
+   }
+
+   /**
+-   * Default value callback for 'user' base field definition.
++   * Default value callback for 'source' base field definition.
+    *
+    * @see ::baseFieldDefinitions()
+    *
+    * @return array
+    *   An array of default values.
+    */
+-  public static function getCurrentIp() {
+-    return hash('sha256', serialize(\Drupal::request()->getClientIp()));
++  public static function getVoteSource() {
++    $source = self::getCurrentIp();
++    $uid = \Drupal::currentUser()->id();
++    $source_config = \Drupal::config('votingapi.settings')->get('anonymous_vote_restrictions');
++
++    if ($source_config && !$uid) {
++      switch ($source_config) {
++        case 'session':
++          $session = \Drupal::service('session');
++          // Ensure something is in $_SESSION, otherwise the session ID will
++          // not persist.
++          // TODO: Replace this with something cleaner once core provides it.
++          // See https://www.drupal.org/node/2865991.
++          $_SESSION['voteapi_anonym_session'] = TRUE;
++          $session->set('voteapi_anonym_session', TRUE);
++          $session->start();
++
++          $session_id = $session->getId();
++          $source = $source . '__session__' . $session_id;
++          break;
++        }
++    }
++    return $source;
++  }
++
++  function save() {
++    if (empty($this->getOwnerId()) || $this->getOwnerId() == 0) {
++      $window = \Drupal::config('votingapi.settings')->get('anonymous_window');
++    }
++    else {
++      $window = \Drupal::config('votingapi.settings')->get('user_window');
++    }
++
++    $votes_query = \Drupal::entityQuery('vote')
++      ->condition('type', $this->get('type')->target_id)
++      ->condition('entity_type', $this->getVotedEntityType())
++      ->condition('entity_id', $this->getVotedEntityId())
++      ->condition('user_id', $this->getOwnerId())
++      ->condition('vote_source', $this->getSource());
++
++    if ($window >= 0) {
++      $timestamp = REQUEST_TIME - $window;
++      $votes_query->condition('timestamp', $timestamp, '>');
++    }
++    $votes_id = $votes_query->execute();
++
++    if (!empty($votes_id)) {
++      $Votes = $this->entityTypeManager()
++        ->getStorage('vote')
++        ->loadMultiple($votes_id);
++      foreach ($Votes as $Vote) {
++        $Vote->delete();
++      }
++    }
++    return parent::save();
+   }
+
+   /**
+diff --git a/src/Form/SettingsForm.php b/src/Form/SettingsForm.php
+index c9f95d7..8d63ed1 100644
+--- a/src/Form/SettingsForm.php
++++ b/src/Form/SettingsForm.php
+@@ -94,10 +94,11 @@ class SettingsForm extends ConfigFormBase {
+       604800,
+     ];
+
+-    $options = [];
++    $options = [0 => "Immediately"];
+     foreach ($unit_options as $option) {
+       $options[$option] = $this->dateFormatter->formatInterval($option);;
+     }
++    $options[-1] = "Never";
+
+     $form['anonymous_window'] = [
+       '#type' => 'select',
+@@ -115,6 +116,18 @@ class SettingsForm extends ConfigFormBase {
+       '#default_value' => $config->get('user_window'),
+     ];
+
++    $form['anonymous_vote_restrictions'] = [
++      '#type' => 'radios',
++      '#title' => $this->t('Anonymous Vote Source restrictions'),
++      '#description' => $this->t('Enable to differentiate votes from same IP (e.g. private network, public place).'),
++      '#default_value' => !empty($config->get('anonymous_vote_restrictions')) ? $config->get('anonymous_vote_restrictions') : 'ip',
++      '#options' => [
++        'ip' => t('One vote per IP'),
++        'session' => t('One vote per session'),
++      ],
++      '#required' => TRUE,
++    ];
++
+     $form['calculation_schedule'] = [
+       '#type' => 'radios',
+       '#title' => $this->t('Calculation schedule'),
+@@ -148,6 +161,7 @@ class SettingsForm extends ConfigFormBase {
+       'user_window',
+       'calculation_schedule',
+       'delete_everywhere',
++      'anonymous_vote_restrictions',
+     ];
+     foreach ($settings as $setting) {
+       $config->set($setting, $form_state->getValue($setting));

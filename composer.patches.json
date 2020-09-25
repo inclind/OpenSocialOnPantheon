@@ -1,0 +1,34 @@
+{
+  "patches": {
+    "drupal/core" : {
+      "Dispatch events for changing content moderation states: https://www.drupal.org/project/drupal/issues/2873287": "https://www.drupal.org/files/issues/2018-11-06/2873287-50.patch",
+      "Entity reference field View output is not used for selected entity display: https://www.drupal.org/project/drupal/issues/2796341": "https://www.drupal.org/files/issues/2018-11-27/entityreference_autocomplete_views_edit-2796341-18.patch",
+      "Provide a relationship from the revision table to the main table: https://www.drupal.org/project/drupal/issues/2652652": "https://www.drupal.org/files/issues/2019-12-16/2652652-61.patch",
+      "Allow AJAX to use GET requests: https://www.drupal.org/project/drupal/issues/956186": "https://www.drupal.org/files/issues/2020-09-17/drupal-956186-121-ajax-get.patch",
+      "Drupal.views.ajaxView is not initializing pagers in nested views: https://www.drupal.org/project/drupal/issues/2858890": "https://www.drupal.org/files/issues/2019-11-14/2858890-43.patch",
+      "Views TranslationLanguageRenderer fails on ghost nodesViews TranslationLanguageRenderer fails on ghost nodes https://www.drupal.org/project/drupal/issues/2869347": "https://www.drupal.org/files/issues/views-translation-language-renderer-2869347-2-D8.patch",
+      "Allow image style to be selected in Text Editor's image dialog: https://www.drupal.org/project/drupal/issues/2061377?page=1": "https://www.drupal.org/files/issues/2020-01-28/2061377-362.patch",
+      "Alternative language link tag being set for content with language \"not specificed\": https://www.drupal.org/project/drupal/issues/2926013": "https://www.drupal.org/files/issues/2020-01-04/2926013-alternate-link-set-for-language-not-specified-5.patch",
+      "HtmlHeadLink processing does not allow for duplicated alternate hreflang links: https://www.drupal.org/project/drupal/issues/2945033": "https://www.drupal.org/files/issues/2020-01-24/2945033-12.patch"
+    },
+    "drupal/group" : {
+      "https://www.drupal.org/project/group/issues/2942657#comment-12729597": "https://www.drupal.org/files/issues/2018-08-15/group-route-match-ajax-views-d8-2942657-11.patch"
+    },
+    "drupal/redis": {
+      "https://www.drupal.org/project/redis/issues/2944938": "https://www.drupal.org/files/issues/2020-09-23/redis-default_permanent_ttl-2944938.patch"
+    },
+    "drupal/search_api": {
+      "Custom Inclind - do not strip tags in search_api based views for Rendered HTML field": "./patches/search_api/inclind-search_api-views_dont_strip_tags_rendered_html-d8.patch"
+    },
+    "drupal/votingapi" : {
+      "Custom Inclind - Voting differentiation fix": "./patches/votingapi/votingapi-inclind_custom_fix_anonymous_voting_session.patch"
+    },
+    "goalgorilla/open_social": {
+      "https://www.drupal.org/project/social/issues/2905325": "./patches/open_social/entity_access_by_field/unpublished-content-not-accessible-for-author-2905325-5.patch",
+      "Custom Inclind - One Column Layout": "./patches/open_social/socialbase/opensocial_socialbase_theme_one_col_layout.patch",
+      "Custom Inclind - Make Social Posts revisionable to be compatible with Core Content Moderation": "./patches/open_social/social_post/inclind_custom_-make_social_post_revisionable-d8.patch",
+      "Custom Inclind - Like_Dislike JS/Twig fixes after module upgrade": "./patches/open_social/socialbase/inclind-socialbase_theme_after_like_dislike_upgrade.patch",
+      "Custom Inclind - Create activity for Social posts when Group changed": "./patches/open_social/social_group/inclind_custom-social-move_activity_for_posts-d8.8.10.patch"
+    }
+  }
+}

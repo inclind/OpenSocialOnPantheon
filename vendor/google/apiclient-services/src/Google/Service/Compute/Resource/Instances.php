@@ -58,6 +58,37 @@ class Google_Service_Compute_Resource_Instances extends Google_Service_Resource
     return $this->call('addAccessConfig', array($params), "Google_Service_Compute_Operation");
   }
   /**
+   * Adds existing resource policies to an instance. You can only add one policy
+   * right now which will be applied to this instance for scheduling live
+   * migrations. (instances.addResourcePolicies)
+   *
+   * @param string $project Project ID for this request.
+   * @param string $zone The name of the zone for this request.
+   * @param string $instance The instance name for this request.
+   * @param Google_Service_Compute_InstancesAddResourcePoliciesRequest $postBody
+   * @param array $optParams Optional parameters.
+   *
+   * @opt_param string requestId An optional request ID to identify requests.
+   * Specify a unique request ID so that if you must retry your request, the
+   * server will know to ignore the request if it has already been completed.
+   *
+   * For example, consider a situation where you make an initial request and the
+   * request times out. If you make the request again with the same request ID,
+   * the server can check if original operation with the same request ID was
+   * received, and if so, will ignore the second request. This prevents clients
+   * from accidentally creating duplicate commitments.
+   *
+   * The request ID must be a valid UUID with the exception that zero UUID is not
+   * supported (00000000-0000-0000-0000-000000000000).
+   * @return Google_Service_Compute_Operation
+   */
+  public function addResourcePolicies($project, $zone, $instance, Google_Service_Compute_InstancesAddResourcePoliciesRequest $postBody, $optParams = array())
+  {
+    $params = array('project' => $project, 'zone' => $zone, 'instance' => $instance, 'postBody' => $postBody);
+    $params = array_merge($params, $optParams);
+    return $this->call('addResourcePolicies', array($params), "Google_Service_Compute_Operation");
+  }
+  /**
    * Retrieves aggregated list of all of the instances in your project across all
    * regions and zones. (instances.aggregatedList)
    *
@@ -67,41 +98,48 @@ class Google_Service_Compute_Resource_Instances extends Google_Service_Resource
    * @opt_param string filter A filter expression that filters resources listed in
    * the response. The expression must specify the field name, a comparison
    * operator, and the value that you want to use for filtering. The value must be
-   * a string, a number, or a boolean. The comparison operator must be either =,
-   * !=, >, or <.
+   * a string, a number, or a boolean. The comparison operator must be either `=`,
+   * `!=`, `>`, or `<`.
    *
    * For example, if you are filtering Compute Engine instances, you can exclude
-   * instances named example-instance by specifying name != example-instance.
+   * instances named `example-instance` by specifying `name != example-instance`.
    *
    * You can also filter nested fields. For example, you could specify
-   * scheduling.automaticRestart = false to include instances only if they are not
-   * scheduled for automatic restarts. You can use filtering on nested fields to
-   * filter based on resource labels.
+   * `scheduling.automaticRestart = false` to include instances only if they are
+   * not scheduled for automatic restarts. You can use filtering on nested fields
+   * to filter based on resource labels.
    *
    * To filter on multiple expressions, provide each separate expression within
-   * parentheses. For example, (scheduling.automaticRestart = true) (cpuPlatform =
-   * "Intel Skylake"). By default, each expression is an AND expression. However,
-   * you can include AND and OR expressions explicitly. For example, (cpuPlatform
-   * = "Intel Skylake") OR (cpuPlatform = "Intel Broadwell") AND
-   * (scheduling.automaticRestart = true).
+   * parentheses. For example: ``` (scheduling.automaticRestart = true)
+   * (cpuPlatform = "Intel Skylake") ``` By default, each expression is an `AND`
+   * expression. However, you can include `AND` and `OR` expressions explicitly.
+   * For example: ``` (cpuPlatform = "Intel Skylake") OR (cpuPlatform = "Intel
+   * Broadwell") AND (scheduling.automaticRestart = true) ```
+   * @opt_param bool includeAllScopes Indicates whether every visible scope for
+   * each scope type (zone, region, global) should be included in the response.
+   * For new resource types added after this field, the flag has no effect as new
+   * resource types will always include every visible scope for each scope type in
+   * response. For resource types which predate this field, if this flag is
+   * omitted or false, only scopes of the scope types where the resource type is
+   * expected to be found will be included.
    * @opt_param string maxResults The maximum number of results per page that
    * should be returned. If the number of available results is larger than
-   * maxResults, Compute Engine returns a nextPageToken that can be used to get
-   * the next page of results in subsequent list requests. Acceptable values are 0
-   * to 500, inclusive. (Default: 500)
+   * `maxResults`, Compute Engine returns a `nextPageToken` that can be used to
+   * get the next page of results in subsequent list requests. Acceptable values
+   * are `0` to `500`, inclusive. (Default: `500`)
    * @opt_param string orderBy Sorts list results by a certain order. By default,
    * results are returned in alphanumerical order based on the resource name.
    *
    * You can also sort results in descending order based on the creation timestamp
-   * using orderBy="creationTimestamp desc". This sorts results based on the
-   * creationTimestamp field in reverse chronological order (newest result first).
-   * Use this to sort resources like operations so that the newest operation is
-   * returned first.
+   * using `orderBy="creationTimestamp desc"`. This sorts results based on the
+   * `creationTimestamp` field in reverse chronological order (newest result
+   * first). Use this to sort resources like operations so that the newest
+   * operation is returned first.
    *
-   * Currently, only sorting by name or creationTimestamp desc is supported.
-   * @opt_param string pageToken Specifies a page token to use. Set pageToken to
-   * the nextPageToken returned by a previous list request to get the next page of
-   * results.
+   * Currently, only sorting by `name` or `creationTimestamp desc` is supported.
+   * @opt_param string pageToken Specifies a page token to use. Set `pageToken` to
+   * the `nextPageToken` returned by a previous list request to get the next page
+   * of results.
    * @return Google_Service_Compute_InstanceAggregatedList
    */
   public function aggregatedList($project, $optParams = array())
@@ -122,8 +160,8 @@ class Google_Service_Compute_Resource_Instances extends Google_Service_Resource
    * @param Google_Service_Compute_AttachedDisk $postBody
    * @param array $optParams Optional parameters.
    *
-   * @opt_param bool forceAttach Whether to force attach the disk even if it's
-   * currently attached to another instance.
+   * @opt_param bool forceAttach Whether to force attach the regional disk even if
+   * it's currently attached to another instance.
    * @opt_param string requestId An optional request ID to identify requests.
    * Specify a unique request ID so that if you must retry your request, the
    * server will know to ignore the request if it has already been completed.
@@ -278,6 +316,8 @@ class Google_Service_Compute_Resource_Instances extends Google_Service_Resource
    * @param string $zone The name of the zone for this request.
    * @param string $resource Name or id of the resource for this request.
    * @param array $optParams Optional parameters.
+   *
+   * @opt_param int optionsRequestedPolicyVersion Requested IAM Policy version.
    * @return Google_Service_Compute_Policy
    */
   public function getIamPolicy($project, $zone, $resource, $optParams = array())
@@ -287,20 +327,45 @@ class Google_Service_Compute_Resource_Instances extends Google_Service_Resource
     return $this->call('getIamPolicy', array($params), "Google_Service_Compute_Policy");
   }
   /**
-   * Returns the last 1 MB of serial port output from the specified instance.
-   * (instances.getSerialPortOutput)
+   * Returns the screenshot from the specified instance. (instances.getScreenshot)
    *
    * @param string $project Project ID for this request.
    * @param string $zone The name of the zone for this request.
    * @param string $instance Name of the instance scoping this request.
    * @param array $optParams Optional parameters.
+   * @return Google_Service_Compute_Screenshot
+   */
+  public function getScreenshot($project, $zone, $instance, $optParams = array())
+  {
+    $params = array('project' => $project, 'zone' => $zone, 'instance' => $instance);
+    $params = array_merge($params, $optParams);
+    return $this->call('getScreenshot', array($params), "Google_Service_Compute_Screenshot");
+  }
+  /**
+   * Returns the last 1 MB of serial port output from the specified instance.
+   * (instances.getSerialPortOutput)
+   *
+   * @param string $project Project ID for this request.
+   * @param string $zone The name of the zone for this request.
+   * @param string $instance Name of the instance for this request.
+   * @param array $optParams Optional parameters.
    *
    * @opt_param int port Specifies which COM or serial port to retrieve data from.
-   * @opt_param string start Returns output starting from a specific byte
-   * position. Use this to page through output when the output is too large to
-   * return in a single request. For the initial request, leave this field
-   * unspecified. For subsequent calls, this field should be set to the next value
-   * returned in the previous call.
+   * @opt_param string start Specifies the starting byte position of the output to
+   * return. To start with the first byte of output to the specified port, omit
+   * this field or set it to `0`.
+   *
+   * If the output for that byte position is available, this field matches the
+   * `start` parameter sent with the request. If the amount of serial console
+   * output exceeds the size of the buffer (1 MB), the oldest output is discarded
+   * and is no longer available. If the requested start position refers to
+   * discarded output, the start position is adjusted to the oldest output still
+   * available, and the adjusted start position is returned as the `start`
+   * property value.
+   *
+   * You can also provide a negative start position, which translates to the most
+   * recent number of bytes written to the serial port. For example, -3 is
+   * interpreted as the most recent 3 bytes written to the serial console.
    * @return Google_Service_Compute_SerialPortOutput
    */
   public function getSerialPortOutput($project, $zone, $instance, $optParams = array())
@@ -373,41 +438,41 @@ class Google_Service_Compute_Resource_Instances extends Google_Service_Resource
    * @opt_param string filter A filter expression that filters resources listed in
    * the response. The expression must specify the field name, a comparison
    * operator, and the value that you want to use for filtering. The value must be
-   * a string, a number, or a boolean. The comparison operator must be either =,
-   * !=, >, or <.
+   * a string, a number, or a boolean. The comparison operator must be either `=`,
+   * `!=`, `>`, or `<`.
    *
    * For example, if you are filtering Compute Engine instances, you can exclude
-   * instances named example-instance by specifying name != example-instance.
+   * instances named `example-instance` by specifying `name != example-instance`.
    *
    * You can also filter nested fields. For example, you could specify
-   * scheduling.automaticRestart = false to include instances only if they are not
-   * scheduled for automatic restarts. You can use filtering on nested fields to
-   * filter based on resource labels.
+   * `scheduling.automaticRestart = false` to include instances only if they are
+   * not scheduled for automatic restarts. You can use filtering on nested fields
+   * to filter based on resource labels.
    *
    * To filter on multiple expressions, provide each separate expression within
-   * parentheses. For example, (scheduling.automaticRestart = true) (cpuPlatform =
-   * "Intel Skylake"). By default, each expression is an AND expression. However,
-   * you can include AND and OR expressions explicitly. For example, (cpuPlatform
-   * = "Intel Skylake") OR (cpuPlatform = "Intel Broadwell") AND
-   * (scheduling.automaticRestart = true).
+   * parentheses. For example: ``` (scheduling.automaticRestart = true)
+   * (cpuPlatform = "Intel Skylake") ``` By default, each expression is an `AND`
+   * expression. However, you can include `AND` and `OR` expressions explicitly.
+   * For example: ``` (cpuPlatform = "Intel Skylake") OR (cpuPlatform = "Intel
+   * Broadwell") AND (scheduling.automaticRestart = true) ```
    * @opt_param string maxResults The maximum number of results per page that
    * should be returned. If the number of available results is larger than
-   * maxResults, Compute Engine returns a nextPageToken that can be used to get
-   * the next page of results in subsequent list requests. Acceptable values are 0
-   * to 500, inclusive. (Default: 500)
+   * `maxResults`, Compute Engine returns a `nextPageToken` that can be used to
+   * get the next page of results in subsequent list requests. Acceptable values
+   * are `0` to `500`, inclusive. (Default: `500`)
    * @opt_param string orderBy Sorts list results by a certain order. By default,
    * results are returned in alphanumerical order based on the resource name.
    *
    * You can also sort results in descending order based on the creation timestamp
-   * using orderBy="creationTimestamp desc". This sorts results based on the
-   * creationTimestamp field in reverse chronological order (newest result first).
-   * Use this to sort resources like operations so that the newest operation is
-   * returned first.
+   * using `orderBy="creationTimestamp desc"`. This sorts results based on the
+   * `creationTimestamp` field in reverse chronological order (newest result
+   * first). Use this to sort resources like operations so that the newest
+   * operation is returned first.
    *
-   * Currently, only sorting by name or creationTimestamp desc is supported.
-   * @opt_param string pageToken Specifies a page token to use. Set pageToken to
-   * the nextPageToken returned by a previous list request to get the next page of
-   * results.
+   * Currently, only sorting by `name` or `creationTimestamp desc` is supported.
+   * @opt_param string pageToken Specifies a page token to use. Set `pageToken` to
+   * the `nextPageToken` returned by a previous list request to get the next page
+   * of results.
    * @return Google_Service_Compute_InstanceList
    */
   public function listInstances($project, $zone, $optParams = array())
@@ -417,9 +482,10 @@ class Google_Service_Compute_Resource_Instances extends Google_Service_Resource
     return $this->call('list', array($params), "Google_Service_Compute_InstanceList");
   }
   /**
-   * Retrieves the list of referrers to instances contained within the specified
-   * zone. For more information, read Viewing Referrers to VM Instances.
-   * (instances.listReferrers)
+   * Retrieves a list of resources that refer to the VM instance specified in the
+   * request. For example, if the VM instance is part of a managed instance group,
+   * the referrers list includes the managed instance group. For more information,
+   * read Viewing Referrers to VM Instances. (instances.listReferrers)
    *
    * @param string $project Project ID for this request.
    * @param string $zone The name of the zone for this request.
@@ -430,41 +496,41 @@ class Google_Service_Compute_Resource_Instances extends Google_Service_Resource
    * @opt_param string filter A filter expression that filters resources listed in
    * the response. The expression must specify the field name, a comparison
    * operator, and the value that you want to use for filtering. The value must be
-   * a string, a number, or a boolean. The comparison operator must be either =,
-   * !=, >, or <.
+   * a string, a number, or a boolean. The comparison operator must be either `=`,
+   * `!=`, `>`, or `<`.
    *
    * For example, if you are filtering Compute Engine instances, you can exclude
-   * instances named example-instance by specifying name != example-instance.
+   * instances named `example-instance` by specifying `name != example-instance`.
    *
    * You can also filter nested fields. For example, you could specify
-   * scheduling.automaticRestart = false to include instances only if they are not
-   * scheduled for automatic restarts. You can use filtering on nested fields to
-   * filter based on resource labels.
+   * `scheduling.automaticRestart = false` to include instances only if they are
+   * not scheduled for automatic restarts. You can use filtering on nested fields
+   * to filter based on resource labels.
    *
    * To filter on multiple expressions, provide each separate expression within
-   * parentheses. For example, (scheduling.automaticRestart = true) (cpuPlatform =
-   * "Intel Skylake"). By default, each expression is an AND expression. However,
-   * you can include AND and OR expressions explicitly. For example, (cpuPlatform
-   * = "Intel Skylake") OR (cpuPlatform = "Intel Broadwell") AND
-   * (scheduling.automaticRestart = true).
+   * parentheses. For example: ``` (scheduling.automaticRestart = true)
+   * (cpuPlatform = "Intel Skylake") ``` By default, each expression is an `AND`
+   * expression. However, you can include `AND` and `OR` expressions explicitly.
+   * For example: ``` (cpuPlatform = "Intel Skylake") OR (cpuPlatform = "Intel
+   * Broadwell") AND (scheduling.automaticRestart = true) ```
    * @opt_param string maxResults The maximum number of results per page that
    * should be returned. If the number of available results is larger than
-   * maxResults, Compute Engine returns a nextPageToken that can be used to get
-   * the next page of results in subsequent list requests. Acceptable values are 0
-   * to 500, inclusive. (Default: 500)
+   * `maxResults`, Compute Engine returns a `nextPageToken` that can be used to
+   * get the next page of results in subsequent list requests. Acceptable values
+   * are `0` to `500`, inclusive. (Default: `500`)
    * @opt_param string orderBy Sorts list results by a certain order. By default,
    * results are returned in alphanumerical order based on the resource name.
    *
    * You can also sort results in descending order based on the creation timestamp
-   * using orderBy="creationTimestamp desc". This sorts results based on the
-   * creationTimestamp field in reverse chronological order (newest result first).
-   * Use this to sort resources like operations so that the newest operation is
-   * returned first.
+   * using `orderBy="creationTimestamp desc"`. This sorts results based on the
+   * `creationTimestamp` field in reverse chronological order (newest result
+   * first). Use this to sort resources like operations so that the newest
+   * operation is returned first.
    *
-   * Currently, only sorting by name or creationTimestamp desc is supported.
-   * @opt_param string pageToken Specifies a page token to use. Set pageToken to
-   * the nextPageToken returned by a previous list request to get the next page of
-   * results.
+   * Currently, only sorting by `name` or `creationTimestamp desc` is supported.
+   * @opt_param string pageToken Specifies a page token to use. Set `pageToken` to
+   * the `nextPageToken` returned by a previous list request to get the next page
+   * of results.
    * @return Google_Service_Compute_InstanceListReferrers
    */
   public function listReferrers($project, $zone, $instance, $optParams = array())
@@ -472,6 +538,36 @@ class Google_Service_Compute_Resource_Instances extends Google_Service_Resource
     $params = array('project' => $project, 'zone' => $zone, 'instance' => $instance);
     $params = array_merge($params, $optParams);
     return $this->call('listReferrers', array($params), "Google_Service_Compute_InstanceListReferrers");
+  }
+  /**
+   * Removes resource policies from an instance.
+   * (instances.removeResourcePolicies)
+   *
+   * @param string $project Project ID for this request.
+   * @param string $zone The name of the zone for this request.
+   * @param string $instance The instance name for this request.
+   * @param Google_Service_Compute_InstancesRemoveResourcePoliciesRequest $postBody
+   * @param array $optParams Optional parameters.
+   *
+   * @opt_param string requestId An optional request ID to identify requests.
+   * Specify a unique request ID so that if you must retry your request, the
+   * server will know to ignore the request if it has already been completed.
+   *
+   * For example, consider a situation where you make an initial request and the
+   * request times out. If you make the request again with the same request ID,
+   * the server can check if original operation with the same request ID was
+   * received, and if so, will ignore the second request. This prevents clients
+   * from accidentally creating duplicate commitments.
+   *
+   * The request ID must be a valid UUID with the exception that zero UUID is not
+   * supported (00000000-0000-0000-0000-000000000000).
+   * @return Google_Service_Compute_Operation
+   */
+  public function removeResourcePolicies($project, $zone, $instance, Google_Service_Compute_InstancesRemoveResourcePoliciesRequest $postBody, $optParams = array())
+  {
+    $params = array('project' => $project, 'zone' => $zone, 'instance' => $instance, 'postBody' => $postBody);
+    $params = array_merge($params, $optParams);
+    return $this->call('removeResourcePolicies', array($params), "Google_Service_Compute_Operation");
   }
   /**
    * Performs a reset on the instance. This is a hard reset the VM does not do a
@@ -735,7 +831,10 @@ class Google_Service_Compute_Resource_Instances extends Google_Service_Resource
     return $this->call('setMinCpuPlatform', array($params), "Google_Service_Compute_Operation");
   }
   /**
-   * Sets an instance's scheduling options. (instances.setScheduling)
+   * Sets an instance's scheduling options. You can only call this method on a
+   * stopped instance, that is, a VM instance that is in a `TERMINATED` state. See
+   * Instance Life Cycle for more information on the possible instance states.
+   * (instances.setScheduling)
    *
    * @param string $project Project ID for this request.
    * @param string $zone The name of the zone for this request.
@@ -980,6 +1079,47 @@ class Google_Service_Compute_Resource_Instances extends Google_Service_Resource
     $params = array('project' => $project, 'zone' => $zone, 'resource' => $resource, 'postBody' => $postBody);
     $params = array_merge($params, $optParams);
     return $this->call('testIamPermissions', array($params), "Google_Service_Compute_TestPermissionsResponse");
+  }
+  /**
+   * Updates an instance only if the necessary resources are available. This
+   * method can update only a specific set of instance properties. See  Updating a
+   * running instance for a list of updatable instance properties.
+   * (instances.update)
+   *
+   * @param string $project Project ID for this request.
+   * @param string $zone The name of the zone for this request.
+   * @param string $instance Name of the instance resource to update.
+   * @param Google_Service_Compute_Instance $postBody
+   * @param array $optParams Optional parameters.
+   *
+   * @opt_param string minimalAction Specifies the action to take when updating an
+   * instance even if the updated properties do not require it. If not specified,
+   * then Compute Engine acts based on the minimum action that the updated
+   * properties require.
+   * @opt_param string mostDisruptiveAllowedAction Specifies the most disruptive
+   * action that can be taken on the instance as part of the update. Compute
+   * Engine returns an error if the instance properties require a more disruptive
+   * action as part of the instance update. Valid options from lowest to highest
+   * are NO_EFFECT, REFRESH, and RESTART.
+   * @opt_param string requestId An optional request ID to identify requests.
+   * Specify a unique request ID so that if you must retry your request, the
+   * server will know to ignore the request if it has already been completed.
+   *
+   * For example, consider a situation where you make an initial request and the
+   * request times out. If you make the request again with the same request ID,
+   * the server can check if original operation with the same request ID was
+   * received, and if so, will ignore the second request. This prevents clients
+   * from accidentally creating duplicate commitments.
+   *
+   * The request ID must be a valid UUID with the exception that zero UUID is not
+   * supported (00000000-0000-0000-0000-000000000000).
+   * @return Google_Service_Compute_Operation
+   */
+  public function update($project, $zone, $instance, Google_Service_Compute_Instance $postBody, $optParams = array())
+  {
+    $params = array('project' => $project, 'zone' => $zone, 'instance' => $instance, 'postBody' => $postBody);
+    $params = array_merge($params, $optParams);
+    return $this->call('update', array($params), "Google_Service_Compute_Operation");
   }
   /**
    * Updates the specified access config from an instance's network interface with

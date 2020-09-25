@@ -286,6 +286,13 @@ class EntityViewsDataTest extends UnitTestCase {
     $this->assertCount(1, $revision_data['table']['join']);
     $this->assertEquals(['entity_test' => ['left_field' => 'revision_id', 'field' => 'revision_id', 'type' => 'INNER']], $revision_data['table']['join']);
     $this->assertFalse(isset($data['data_table']));
+
+    $this->assertTrue(!empty($revision_data['id']['relationship']));
+    $this->assertEquals('entity_test', $revision_data['id']['relationship']['base']);
+    $this->assertEquals('id', $revision_data['id']['relationship']['base field']);
+    $this->assertTrue(!empty($revision_data['revision_id']['relationship']));
+    $this->assertEquals('entity_test', $revision_data['revision_id']['relationship']['base']);
+    $this->assertEquals('revision_id', $revision_data['revision_id']['relationship']['base field']);
   }
 
   /**
@@ -334,6 +341,13 @@ class EntityViewsDataTest extends UnitTestCase {
     ], $revision_base_data['table']['join']);
 
     $this->assertFalse(isset($data['data_table']));
+
+    $this->assertTrue(!empty($revision_field_data['id']['relationship']));
+    $this->assertEquals('entity_test_mul_property_data', $revision_field_data['id']['relationship']['base']);
+    $this->assertEquals('id', $revision_field_data['id']['relationship']['base field']);
+    $this->assertTrue(!empty($revision_field_data['revision_id']['relationship']));
+    $this->assertEquals('entity_test_mul_property_data', $revision_field_data['revision_id']['relationship']['base']);
+    $this->assertEquals('revision_id', $revision_field_data['revision_id']['relationship']['base field']);
   }
 
   /**
@@ -380,6 +394,13 @@ class EntityViewsDataTest extends UnitTestCase {
       ],
     ], $revision_base_data['table']['join']);
     $this->assertFalse(isset($data['data_table']));
+
+    $this->assertTrue(!empty($revision_field_data['id']['relationship']));
+    $this->assertEquals('entity_test_mulrev_field_data', $revision_field_data['id']['relationship']['base']);
+    $this->assertEquals('id', $revision_field_data['id']['relationship']['base field']);
+    $this->assertTrue(!empty($revision_field_data['revision_id']['relationship']));
+    $this->assertEquals('entity_test_mulrev_field_data', $revision_field_data['revision_id']['relationship']['base']);
+    $this->assertEquals('revision_id', $revision_field_data['revision_id']['relationship']['base field']);
   }
 
   /**
@@ -589,6 +610,7 @@ class EntityViewsDataTest extends UnitTestCase {
     $entity_type = $this->baseEntityType
       ->set('data_table', 'entity_test_mul_property_data')
       ->set('base_table', 'entity_test_mul')
+      ->set('translatable', TRUE)
       ->set('id', 'entity_test_mul')
       ->setKey('bundle', 'type');
     $base_field_definitions = $this->setupBaseFields(EntityTestMul::baseFieldDefinitions($this->baseEntityType));
@@ -735,12 +757,11 @@ class EntityViewsDataTest extends UnitTestCase {
       'left_field' => 'id',
       'field' => 'entity_id',
       'extra' => [[
-          'field' => 'deleted',
-          'value' => 0,
-          'numeric' => TRUE,
-        ],
-      ],
-    ], $data['entity_test_mul__string']['table']['join']['entity_test_mul']);
+        'field' => 'deleted',
+        'value' => 0,
+        'numeric' => TRUE,
+      ]],
+    ], $data['entity_test_mul__string']['table']['join']['entity_test_mul_property_data']);
   }
 
   /**
@@ -900,6 +921,13 @@ class EntityViewsDataTest extends UnitTestCase {
     // Check the property data fields.
     $this->assertNumericField($data['entity_test_mulrev_property_revision']['id']);
     $this->assertField($data['entity_test_mulrev_property_revision']['id'], 'id');
+
+    $this->assertTrue(!empty($data['entity_test_mulrev_property_revision']['id']['relationship']));
+    $this->assertEquals('entity_test_mulrev_property_data', $data['entity_test_mulrev_property_revision']['id']['relationship']['base']);
+    $this->assertEquals('id', $data['entity_test_mulrev_property_revision']['id']['relationship']['base field']);
+    $this->assertTrue(!empty($data['entity_test_mulrev_property_revision']['revision_id']['relationship']));
+    $this->assertEquals('entity_test_mulrev_property_data', $data['entity_test_mulrev_property_revision']['revision_id']['relationship']['base']);
+    $this->assertEquals('revision_id', $data['entity_test_mulrev_property_revision']['revision_id']['relationship']['base field']);
 
     $this->assertLanguageField($data['entity_test_mulrev_property_revision']['langcode']);
     $this->assertField($data['entity_test_mulrev_property_revision']['langcode'], 'langcode');

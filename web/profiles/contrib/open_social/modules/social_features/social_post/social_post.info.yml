@@ -13,5 +13,6 @@ dependencies:
   - drupal:text
   - drupal:user
   - drupal:views
+  - entity:entity
   - social:activity_creator
 package: Social

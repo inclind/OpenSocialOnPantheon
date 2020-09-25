@@ -32,3 +32,10 @@ view public posts:
 
 view community posts:
   title: 'View community Posts'
+
+view all posts revisions:
+  title: 'View all posts revisions'
+  description: 'To view a revision, you also need permission to administer Post entities.'
+
+permission_callbacks:
+  - social_post.permission_generator::permissions

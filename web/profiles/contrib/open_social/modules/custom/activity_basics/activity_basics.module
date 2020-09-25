@@ -17,10 +17,25 @@ function activity_basics_entity_insert(EntityInterface $entity) {
 }
 
 /**
- * Implements hook_social_group_move().
+ * Implements hook_entity_update().
  */
-function activity_basics_social_group_move(NodeInterface $node) {
-  $node->setCreatedTime($node->getChangedTime());
+function activity_basics_entity_update(EntityInterface $entity) {
+  _activity_basics_entity_action($entity, 'update_entity_action');
+}
+
+/**
+ * Implements hook_social_group_move().
+ *
+ * @param \Drupal\Core\Entity\EntityInterface|\Drupal\node\NodeInterface $node
+ *   The entity: either a Node or Social Post.
+ * @param bool $post_move
+ *   Indicates if the change relates to Social Post entity, as it doesn't have
+ *   any connected GroupContent.
+ */
+function activity_basics_social_group_move(EntityInterface $node, $post_move = FALSE) {
+  if ($node->getEntityTypeId() != 'post') {
+    $node->setCreatedTime($node->getChangedTime());
+  }
 
   // If the node is placed within a new group, we add the move_entity_action
   // activity.
@@ -31,7 +46,18 @@ function activity_basics_social_group_move(NodeInterface $node) {
   // If the node is placed from a group in to the community, we add the
   // create_node-bundle_community activity.
   if (empty($group_contents)) {
-    _activity_basics_entity_action($node, 'create_entitiy_action');
+    if ($node->getEntityTypeId() == 'post' && $post_move) {
+      $val = $node->get('field_recipient_group')->getValue();
+      if (!empty($val)) {
+        _activity_basics_entity_action($node, 'move_entity_action');
+      }
+      else {
+        _activity_basics_entity_action($node, 'create_entitiy_action');
+      }
+    }
+    else {
+      _activity_basics_entity_action($node, 'create_entitiy_action');
+    }
   }
 }
 

@@ -59,7 +59,28 @@ class Google_Service_Kgsearch extends Google_Service
               'path' => 'v1/entities:search',
               'httpMethod' => 'GET',
               'parameters' => array(
+                'limit' => array(
+                  'location' => 'query',
+                  'type' => 'integer',
+                ),
+                'query' => array(
+                  'location' => 'query',
+                  'type' => 'string',
+                ),
                 'languages' => array(
+                  'location' => 'query',
+                  'type' => 'string',
+                  'repeated' => true,
+                ),
+                'prefix' => array(
+                  'location' => 'query',
+                  'type' => 'boolean',
+                ),
+                'indent' => array(
+                  'location' => 'query',
+                  'type' => 'boolean',
+                ),
+                'types' => array(
                   'location' => 'query',
                   'type' => 'string',
                   'repeated' => true,
@@ -68,27 +89,6 @@ class Google_Service_Kgsearch extends Google_Service
                   'location' => 'query',
                   'type' => 'string',
                   'repeated' => true,
-                ),
-                'limit' => array(
-                  'location' => 'query',
-                  'type' => 'integer',
-                ),
-                'prefix' => array(
-                  'location' => 'query',
-                  'type' => 'boolean',
-                ),
-                'query' => array(
-                  'location' => 'query',
-                  'type' => 'string',
-                ),
-                'types' => array(
-                  'location' => 'query',
-                  'type' => 'string',
-                  'repeated' => true,
-                ),
-                'indent' => array(
-                  'location' => 'query',
-                  'type' => 'boolean',
                 ),
               ),
             ),

@@ -79,8 +79,17 @@ class UrlEmbed implements UrlEmbedInterface {
   /**
    * @{inheritdoc}
    */
-  public function getUrlCode($url) {
-    $data = '';
+  public function getUrlInfo($url) {
+    $data = [];
+    $keys = [
+      'aspectRatio',
+      'code',
+      'height',
+      'providerName',
+      'title',
+      'type',
+      'width',
+    ];
     $cid = 'url_embed:' . $url;
     $expire = $this->configFactory->get('url_embed.settings')->get('cache_expiration');
     if ($expire != 0 && $cache = $this->cacheBackend->get($cid)) {
@@ -88,7 +97,9 @@ class UrlEmbed implements UrlEmbedInterface {
     }
     else {
       if ($info = $this->urlEmbed()->getEmbed($url)) {
-        $data = $info->getCode();
+        foreach ($keys as $key) {
+          $data[$key] = $info->{$key};
+        }
         if ($expire != 0) {
           $expiration = ($expire == Cache::PERMANENT) ? Cache::PERMANENT : $this->time->getRequestTime() + $expire;
           $this->cacheBackend->set($cid, $data, $expiration);

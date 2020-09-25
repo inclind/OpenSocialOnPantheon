@@ -1,0 +1,1008 @@
+diff --git a/modules/social_features/social_post/config/schema/post.schema.yml b/modules/social_features/social_post/config/schema/post.schema.yml
+index 1fae819ec..471799850 100644
+--- a/modules/social_features/social_post/config/schema/post.schema.yml
++++ b/modules/social_features/social_post/config/schema/post.schema.yml
+@@ -10,3 +10,6 @@ social_post.post.*:
+       label: 'Label'
+     uuid:
+       type: string
++    revision:
++      type: boolean
++      label: 'Whether a new revision should be created by default'
+diff --git a/modules/social_features/social_post/social_post.info.yml b/modules/social_features/social_post/social_post.info.yml
+index 2543f0440..deeb9267c 100644
+--- a/modules/social_features/social_post/social_post.info.yml
++++ b/modules/social_features/social_post/social_post.info.yml
+@@ -13,5 +13,6 @@ dependencies:
+   - drupal:text
+   - drupal:user
+   - drupal:views
++  - entity:entity
+   - social:activity_creator
+ package: Social
+diff --git a/modules/social_features/social_post/social_post.install b/modules/social_features/social_post/social_post.install
+index bc9a26c75..94243b623 100644
+--- a/modules/social_features/social_post/social_post.install
++++ b/modules/social_features/social_post/social_post.install
+@@ -7,6 +7,8 @@
+ 
+ use Drupal\Core\Site\Settings;
+ use Drupal\user\Entity\Role;
++use Drupal\Core\Field\BaseFieldDefinition;
++use Drupal\Core\StringTranslation\TranslatableMarkup;
+ 
+ /**
+  * PROCEED WITH CARE HERE!
+@@ -92,10 +94,120 @@ function _social_post_get_permissions($role) {
+   return [];
+ }
+
++/**
++ * Make Social Post entities revisionable.
++ */
++function social_post_update_8001() {
++  $definition_update_manager = \Drupal::entityDefinitionUpdateManager();
++  $entity_type = $definition_update_manager->getEntityType('post');
++  $entity_type_id = $entity_type->id();
++
++  // 1. Fix the post entity type to specify its revision data table.
++
++  $entity_type->set('revision_table', 'post_revision');
++  $entity_type->set('revision_data_table', 'post_field_revision');
++  $definition_update_manager->updateEntityType($entity_type);
++
++  // 2. Add a publishing status field for post entities.
++
++  // Add the published entity key to the post entity type.
++  $entity_keys = $entity_type->getKeys();
++  $entity_keys['published'] = 'status';
++  $entity_keys['status'] = 'status';
++  $entity_keys['revision'] = 'revision_id';
++  $entity_type->set('entity_keys', $entity_keys);
++  $definition_update_manager->updateEntityType($entity_type);
++
++  // Add the publishing status field to the post entity type.
++  $status = BaseFieldDefinition::create('boolean')
++    ->setLabel(new TranslatableMarkup('Publishing status'))
++    ->setDescription(new TranslatableMarkup('A boolean indicating the published state.'))
++    ->setRevisionable(TRUE)
++    ->setTranslatable(TRUE)
++    ->setDefaultValue(TRUE);
++
++  $has_content_translation_status_field = \Drupal::moduleHandler()->moduleExists('content_translation') && $definition_update_manager->getFieldStorageDefinition('content_translation_status', $entity_type_id);
++  if ($has_content_translation_status_field) {
++    $status->setInitialValueFromField('content_translation_status', TRUE);
++  }
++  else {
++    $status->setInitialValue(TRUE);
++  }
++  $definition_update_manager->installFieldStorageDefinition('status', $entity_type_id, $entity_type_id, $status);
++
++  // 3. Add 'revision_created' and 'revision_user' fields to 'post' entities.
++
++  $revision_created = BaseFieldDefinition::create('created')
++    ->setLabel(t('Revision create time'))
++    ->setDescription(t('The time that the current revision was created.'))
++    ->setRevisionable(TRUE);
++
++  $definition_update_manager->installFieldStorageDefinition('revision_created', $entity_type_id, $entity_type_id, $revision_created);
++
++  $revision_user = BaseFieldDefinition::create('entity_reference')
++    ->setLabel(t('Revision user'))
++    ->setDescription(t('The user ID of the author of the current revision.'))
++    ->setSetting('target_type', 'user')
++    ->setRevisionable(TRUE);
++
++  $definition_update_manager->installFieldStorageDefinition('revision_user', $entity_type_id, $entity_type_id, $revision_user);
++
++  $revision_log_message = BaseFieldDefinition::create('string_long')
++    ->setLabel(t('Revision log message'))
++    ->setDescription(t('Briefly describe the changes you have made.'))
++    ->setRevisionable(TRUE)
++    ->setDefaultValue('')
++    ->setDisplayOptions('form', [
++      'type' => 'string_textarea',
++      'weight' => 25,
++      'settings' => [
++        'rows' => 4,
++      ],
++    ]);
++  $definition_update_manager->installFieldStorageDefinition('revision_log_message', $entity_type_id, $entity_type_id, $revision_log_message);
++
++
++  // 4. Uninstall the 'content_translation_status' field if needed.
++  $database = \Drupal::database();
++  if ($has_content_translation_status_field) {
++    // First we have to remove the field data.
++    $database->update($entity_type->getDataTable())
++      ->fields(['content_translation_status' => NULL])
++      ->execute();
++
++    // A site may have disabled revisionability for this entity type.
++    if ($entity_type->isRevisionable()) {
++      $database->update($entity_type->getRevisionDataTable())
++        ->fields(['content_translation_status' => NULL])
++        ->execute();
++    }
++
++    $content_translation_status = $definition_update_manager->getFieldStorageDefinition('content_translation_status', $entity_type_id);
++    $definition_update_manager->uninstallFieldStorageDefinition($content_translation_status);
++  }
++
++  return t('@entity_type_label has been converted to revisionable and publishable.', ['@entity_type_label' => $entity_type->getLabel()]);
++
++}
++
+ /**
+  * Implements hook_update_dependencies().
+  */
+ function social_post_update_dependencies() {
++  // The update function that adds the status field must run after
++  // content_translation_update_8400() which fixes NULL values for the
++  // 'content_translation_status' field.
++  if (\Drupal::moduleHandler()->moduleExists('content_translation')) {
++    $dependencies['social_post'][8001] = [
++      'content_translation' => 8400,
++    ];
++  }
++  else {
++    $dependencies['social_post'][8001] = [ // or 8501 ??
++      'system' => 8403,
++    ];
++  }
++
+   // Run the activities view mode update after the final features removal ran.
+   $dependencies['social_post'][8801] = [
+     'social_core' => 8802,
+diff --git a/modules/social_features/social_post/social_post.links.task.yml b/modules/social_features/social_post/social_post.links.task.yml
+index d789b12d1..68b3091f5 100644
+--- a/modules/social_features/social_post/social_post.links.task.yml
++++ b/modules/social_features/social_post/social_post.links.task.yml
+@@ -15,3 +15,9 @@ entity.post.delete_form:
+   base_route:  entity.post.canonical
+   title: 'Delete'
+   weight: 10
++
++entity.post.moderated_content:
++  title: 'Moderated posts'
++  route_name: social_post.admin_moderated_posts
++  parent_id: system.admin_content
++  weight: 2
+diff --git a/modules/social_features/social_post/social_post.permissions.yml b/modules/social_features/social_post/social_post.permissions.yml
+index 8ff5eb506..67ce99993 100644
+--- a/modules/social_features/social_post/social_post.permissions.yml
++++ b/modules/social_features/social_post/social_post.permissions.yml
+@@ -33,5 +33,9 @@ view public posts:
+ view community posts:
+   title: 'View community Posts'
+
++view all posts revisions:
++  title: 'View all posts revisions'
++  description: 'To view a revision, you also need permission to administer Post entities.'
++
+ permission_callbacks:
+   - social_post.permission_generator::permissions
+diff --git a/modules/social_features/social_post/social_post.routing.yml b/modules/social_features/social_post/social_post.routing.yml
+new file mode 100644
+index 000000000..61ed3546e
+--- /dev/null
++++ b/modules/social_features/social_post/social_post.routing.yml
+@@ -0,0 +1,7 @@
++social_post.admin_moderated_posts:
++  path: '/admin/content/post/moderated'
++  defaults:
++    _controller: '\Drupal\social_post\Controller\ModeratedPostController::postsListing'
++    _title: 'Moderated posts content'
++  requirements:
++    _permission: 'view unpublished post entities'
+diff --git a/modules/social_features/social_post/src/Controller/ModeratedPostController.php b/modules/social_features/social_post/src/Controller/ModeratedPostController.php
+new file mode 100644
+index 000000000..de01a351a
+--- /dev/null
++++ b/modules/social_features/social_post/src/Controller/ModeratedPostController.php
+@@ -0,0 +1,26 @@
++<?php
++
++namespace Drupal\social_post\Controller;
++
++use Drupal\social_post\ModeratedPostListBuilder;
++use Drupal\Core\Controller\ControllerBase;
++
++/**
++ * Defines a controller to list moderated posts.
++ */
++class ModeratedPostController extends ControllerBase {
++
++  /**
++   * Provides the listing page for moderated posts.
++   *
++   * @return array
++   *   A render array as expected by
++   *   \Drupal\Core\Render\RendererInterface::render().
++   */
++  public function postsListing() {
++    $entity_type = $this->entityTypeManager()->getDefinition('post');
++
++    return $this->entityTypeManager()->createHandlerInstance(ModeratedPostListBuilder::class, $entity_type)->render();
++  }
++
++}
+diff --git a/modules/social_features/social_post/src/Entity/Post.php b/modules/social_features/social_post/src/Entity/Post.php
+index c3ee2e75d..8e3c3bd09 100644
+--- a/modules/social_features/social_post/src/Entity/Post.php
++++ b/modules/social_features/social_post/src/Entity/Post.php
+@@ -2,14 +2,17 @@
+ 
+ namespace Drupal\social_post\Entity;
+ 
++use Drupal\Core\Entity\EditorialContentEntityBase;
++use Drupal\Core\Entity\EntityChangedInterface;
+ use Drupal\Core\Entity\EntityStorageInterface;
+ use Drupal\Core\Field\BaseFieldDefinition;
+-use Drupal\Core\Entity\ContentEntityBase;
+ use Drupal\Core\Entity\EntityChangedTrait;
++use Drupal\Core\Entity\EntityPublishedTrait;
+ use Drupal\Core\Entity\EntityTypeInterface;
+ use Drupal\social_core\EntityUrlLanguageTrait;
+ use Drupal\user\RoleInterface;
+ use Drupal\user\UserInterface;
++use Drupal\entity\Revision\RevisionableContentEntityBase;
+ 
+ /**
+  * Defines the Post entity.
+@@ -34,19 +37,32 @@ use Drupal\user\UserInterface;
+  *     "access" = "Drupal\social_post\PostAccessControlHandler",
+  *     "route_provider" = {
+  *       "html" = "Drupal\social_post\PostHtmlRouteProvider",
++ *       "revision" = "Drupal\entity\Routing\RevisionRouteProvider",
++ *       "delete-multiple" = "Drupal\entity\Routing\DeleteMultipleRouteProvider",
+  *     },
+  *   },
+  *   base_table = "post",
++ *   revision_table = "post_revision",
+  *   data_table = "post_field_data",
++ *   revision_data_table = "post_field_revision",
++ *   show_revision_ui = TRUE,
+  *   translatable = TRUE,
++ *   revisionable = TRUE,
+  *   admin_permission = "administer post entities",
+  *   entity_keys = {
+  *     "id" = "id",
++ *     "revision" = "revision_id",
+  *     "bundle" = "type",
+  *     "uuid" = "uuid",
+  *     "uid" = "user_id",
+  *     "langcode" = "langcode",
+  *     "status" = "status",
++ *     "published" = "status",
++ *   },
++ *   revision_metadata_keys = {
++ *     "revision_user" = "revision_user",
++ *     "revision_created" = "revision_created",
++ *     "revision_log_message" = "revision_log"
+  *   },
+  *   links = {
+  *     "canonical" = "/post/{post}",
+@@ -55,12 +71,17 @@ use Drupal\user\UserInterface;
+  *     "edit-form" = "/post/{post}/edit",
+  *     "delete-form" = "/post/{post}/delete",
+  *     "collection" = "/admin/content/post",
++ *     "version-history" = "/post/{post}/revisions",
++ *     "revision" = "/post/{post}/revisions/{post_revision}/view",
++ *     "revision-revert-form" = "/post/{post}/revision/{post_revision}/revert",
+  *   },
+  *   bundle_entity_type = "post_type",
+  *   field_ui_base_route = "entity.post_type.edit_form"
+  * )
+  */
+-class Post extends ContentEntityBase implements PostInterface {
++class Post extends RevisionableContentEntityBase implements PostInterface {
++
++  use EntityPublishedTrait;
+   use EntityChangedTrait;
+   use EntityUrlLanguageTrait;
+
+@@ -99,26 +120,27 @@ class Post extends ContentEntityBase implements PostInterface {
+   /**
+    * {@inheritdoc}
+    */
+-  public function getOwnerId() {
+-    return $this->get('user_id')->target_id;
++  public function setOwner(UserInterface $account) {
++    $this->set('user_id', $account->id());
++    return $this;
+   }
+ 
+   /**
+    * {@inheritdoc}
+    */
+-  public function setOwnerId($uid) {
+-    $this->set('user_id', $uid);
+-    return $this;
++  public function getOwnerId() {
++    return $this->get('user_id')->target_id;
+   }
+ 
+   /**
+    * {@inheritdoc}
+    */
+-  public function setOwner(UserInterface $account) {
+-    $this->set('user_id', $account->id());
++  public function setOwnerId($uid) {
++    $this->set('user_id', $uid);
+     return $this;
+   }
+ 
++
+   /**
+    * {@inheritdoc}
+    */
+@@ -126,14 +148,6 @@ class Post extends ContentEntityBase implements PostInterface {
+     return (bool) $this->getEntityKey('status');
+   }
+
+-  /**
+-   * {@inheritdoc}
+-   */
+-  public function setPublished($published) {
+-    $this->set('status', $published ? NODE_PUBLISHED : NODE_NOT_PUBLISHED);
+-    return $this;
+-  }
+-
+   /**
+    * {@inheritdoc}
+    */
+@@ -300,6 +314,7 @@ class Post extends ContentEntityBase implements PostInterface {
+    * {@inheritdoc}
+    */
+   public static function baseFieldDefinitions(EntityTypeInterface $entity_type) {
++    /** @var \Drupal\Core\Field\BaseFieldDefinition[] $fields */
+     $fields = parent::baseFieldDefinitions($entity_type);
+ 
+     $fields['id'] = BaseFieldDefinition::create('integer')
+@@ -338,9 +353,24 @@ class Post extends ContentEntityBase implements PostInterface {
+       ->setDisplayConfigurable('form', TRUE)
+       ->setDisplayConfigurable('view', TRUE);
+ 
++    $fields['revision_id']->setDescription(t('The revision ID.'));
++
++    $fields['revision_log'] = BaseFieldDefinition::create('string_long')
++      ->setLabel(t('Revision log message'))
++      ->setDescription(t('The log entry explaining the changes in this revision.'))
++      ->setRevisionable(TRUE)
++      ->setDisplayOptions('form', [
++        'type' => 'string_textarea',
++        'weight' => 25,
++        'settings' => [
++          'rows' => 4,
++        ],
++      ]);
++
+     $fields['status'] = BaseFieldDefinition::create('boolean')
+       ->setLabel(t('Published'))
+-      ->setDefaultValue(TRUE);
++      ->setRevisionable(TRUE);
++//      ->setDefaultValue(TRUE);
+     $fields['status']
+       ->setDisplayOptions('form', [
+         'type' => 'boolean_checkbox',
+@@ -362,13 +392,104 @@ class Post extends ContentEntityBase implements PostInterface {
+ 
+     $fields['created'] = BaseFieldDefinition::create('created')
+       ->setLabel(t('Created'))
++      ->setRevisionable(TRUE)
+       ->setDescription(t('The time that the entity was created.'));
+ 
+     $fields['changed'] = BaseFieldDefinition::create('changed')
+       ->setLabel(t('Changed'))
++      ->setRevisionable(TRUE)
+       ->setDescription(t('The time that the entity was last edited.'));
+ 
++    $fields['revision_created'] = BaseFieldDefinition::create('created')
++      ->setLabel(t('Revision create time'))
++      ->setDescription(t('The time that the current revision was created.'))
++      ->setRevisionable(TRUE);
++
++    $fields['revision_user'] = BaseFieldDefinition::create('entity_reference')
++      ->setLabel(t('Revision user'))
++      ->setDescription(t('The user ID of the author of the current revision.'))
++      ->setSetting('target_type', 'user')
++      ->setRevisionable(TRUE);
++
+     return $fields;
+   }
+ 
++  /**
++   * {@inheritdoc}
++   */
++  public function getRevisionLog() {
++    return $this->getRevisionLogMessage();
++  }
++
++  /**
++   * {@inheritdoc}
++   */
++  public function setRevisionLog($revision_log) {
++    return $this->setRevisionLogMessage($revision_log);
++  }
++
++  /**
++   * {@inheritdoc}
++   */
++  public function getRevisionCreationTime() {
++    return $this->get('revision_created')->value;
++  }
++
++  /**
++   * {@inheritdoc}
++   */
++  public function setRevisionCreationTime($timestamp) {
++    $this->set('revision_created', $timestamp);
++    return $this;
++  }
++
++  /**
++   * {@inheritdoc}
++   */
++  public function getRevisionUser() {
++    return $this->get('revision_user')->entity;
++  }
++
++  public function setRevisionUser(UserInterface $account) {
++    $this->set('revision_user', $account);
++    return $this;
++  }
++
++  /**
++   * {@inheritdoc}
++   */
++  public function getRevisionUserId() {
++    return $this->get('revision_user')->entity->id();
++  }
++
++  /**
++   * {@inheritdoc}
++   */
++  public function setRevisionUserId($user_id) {
++    $this->set('revision_user', $user_id);
++    return $this;
++  }
++
++  /**
++   * {@inheritdoc}
++   */
++  public function getRevisionLogMessage() {
++    return $this->get('revision_log')->value;
++  }
++
++  /**
++   * {@inheritdoc}
++   */
++  public function setRevisionLogMessage($revision_log_message) {
++    $this->set('revision_log', $revision_log_message);
++    return $this;
++  }
++
++  /**
++   * {@inheritdoc}
++   */
++  public static function getRequestTime() {
++    return \Drupal::time()->getRequestTime();
++  }
++
+ }
+diff --git a/modules/social_features/social_post/src/Entity/PostInterface.php b/modules/social_features/social_post/src/Entity/PostInterface.php
+index 2425f1b59..ff8da95b5 100644
+--- a/modules/social_features/social_post/src/Entity/PostInterface.php
++++ b/modules/social_features/social_post/src/Entity/PostInterface.php
+@@ -2,8 +2,10 @@
+ 
+ namespace Drupal\social_post\Entity;
+ 
+-use Drupal\Core\Entity\ContentEntityInterface;
+ use Drupal\Core\Entity\EntityChangedInterface;
++use Drupal\Core\Entity\ContentEntityInterface;
++use Drupal\Core\Entity\EntityPublishedInterface;
++use Drupal\Core\Entity\RevisionLogInterface;
+ use Drupal\user\EntityOwnerInterface;
+ 
+ /**
+@@ -11,7 +13,7 @@ use Drupal\user\EntityOwnerInterface;
+  *
+  * @ingroup social_post
+  */
+-interface PostInterface extends ContentEntityInterface, EntityChangedInterface, EntityOwnerInterface {
++interface PostInterface extends ContentEntityInterface, EntityChangedInterface, RevisionLogInterface, EntityOwnerInterface, EntityPublishedInterface {
+ 
+   /**
+    * Returns the post type.
+@@ -69,6 +71,6 @@ interface PostInterface extends ContentEntityInterface, EntityChangedInterface,
+    * @return \Drupal\social_post\Entity\PostInterface
+    *   The called Post entity.
+    */
+-  public function setPublished($published);
++  public function setPublished($published = NULL);
+ 
+ }
+diff --git a/modules/social_features/social_post/src/Entity/PostType.php b/modules/social_features/social_post/src/Entity/PostType.php
+index dc8ccca83..57f146c23 100644
+--- a/modules/social_features/social_post/src/Entity/PostType.php
++++ b/modules/social_features/social_post/src/Entity/PostType.php
+@@ -27,8 +27,15 @@ use Drupal\Core\Config\Entity\ConfigEntityBundleBase;
+  *   entity_keys = {
+  *     "id" = "id",
+  *     "label" = "label",
++ *     "status" = "status",
+  *     "uuid" = "uuid"
+  *   },
++ *   config_export = {
++ *     "id",
++ *     "label",
++ *     "revision",
++ *     "status",
++ *   },
+  *   links = {
+  *     "canonical" = "/admin/structure/post/{post_type}",
+  *     "add-form" = "/admin/structure/post/add",
+@@ -54,4 +61,60 @@ class PostType extends ConfigEntityBundleBase implements PostTypeInterface {
+    */
+   protected $label;
+ 
++  /**
++   * Whether posts should be published by default.
++   *
++   * @var bool
++   */
++  protected $status = TRUE;
++
++  /**
++   * Default value of the 'Create new revision' checkbox of this post type.
++   *
++   * @var bool
++   */
++  protected $revision = FALSE;
++
++  /**
++   * A brief description of this post type.
++   *
++   * @var string
++   */
++  protected $description;
++
++  /**
++   * {@inheritdoc}
++   */
++  public function getStatus() {
++    return $this->status;
++  }
++
++  /**
++   * {@inheritdoc}
++   */
++  public function getDescription() {
++    return $this->description;
++  }
++
++  /**
++   * {@inheritdoc}
++   */
++  public function setDescription($description) {
++    return $this->set('description', $description);
++  }
++
++  /**
++   * {@inheritdoc}
++   */
++  public function shouldCreateNewRevision() {
++    return $this->revision;
++  }
++
++  /**
++   * {@inheritdoc}
++   */
++  public function setNewRevision($revision) {
++    return $this->set('revision', $revision);
++  }
++
+ }
+diff --git a/modules/social_features/social_post/src/Entity/PostTypeInterface.php b/modules/social_features/social_post/src/Entity/PostTypeInterface.php
+index 4cff17eeb..54e2523fb 100644
+--- a/modules/social_features/social_post/src/Entity/PostTypeInterface.php
++++ b/modules/social_features/social_post/src/Entity/PostTypeInterface.php
+@@ -3,11 +3,23 @@
+ namespace Drupal\social_post\Entity;
+ 
+ use Drupal\Core\Config\Entity\ConfigEntityInterface;
++use Drupal\Core\Entity\EntityDescriptionInterface;
++use Drupal\Core\Entity\RevisionableEntityBundleInterface;
+ 
+ /**
+  * Provides an interface for defining Post type entities.
+  */
+-interface PostTypeInterface extends ConfigEntityInterface {
++interface PostTypeInterface extends ConfigEntityInterface, EntityDescriptionInterface, RevisionableEntityBundleInterface {
+ 
+   // Add get/set methods for your configuration properties here.
++  /**
++   * Sets whether new revisions should be created by default.
++   *
++   * @param bool $new_revision
++   *   TRUE if post items of this type should create new revisions by default.
++   *
++   * @return $this
++   */
++  public function setNewRevision($new_revision);
++
+ }
+diff --git a/modules/social_features/social_post/src/Entity/PostViewsData.php b/modules/social_features/social_post/src/Entity/PostViewsData.php
+index dd6c24d70..01830e47e 100644
+--- a/modules/social_features/social_post/src/Entity/PostViewsData.php
++++ b/modules/social_features/social_post/src/Entity/PostViewsData.php
+@@ -14,14 +14,40 @@ class PostViewsData extends EntityViewsData implements EntityViewsDataInterface
+    * {@inheritdoc}
+    */
+   public function getViewsData() {
++
+     $data = parent::getViewsData();
+ 
++    $data['post_field_data']['id']['field']['id'] = 'field';
++    $data['post_field_data']['type']['field']['id'] = 'field';
++
+     $data['post_field_data']['table']['base'] = [
+       'field' => 'id',
+       'title' => $this->t('Post'),
+       'help' => $this->t('The Post ID.'),
+     ];
+ 
++    // Advertise this table as a possible base table.
++    $data['post_field_revision']['table']['base'] = [
++      'field' => 'revision_id',
++      'title' => $this->t('Post'),
++      'help' => $this->t('The Post revision ID.'),
++    ];
++
++    // @todo EntityViewsData should add these relationships by default.
++    //   https://www.drupal.org/node/2410275
++    $data['post_field_revision']['id']['relationship']['id'] = 'standard';
++    $data['post_field_revision']['id']['relationship']['base'] = 'post_field_data';
++    $data['post_field_revision']['id']['relationship']['base field'] = 'id';
++    $data['post_field_revision']['id']['relationship']['title'] = $this->t('Post Content');
++    $data['post_field_revision']['id']['relationship']['label'] = $this->t('Get the actual post content from a post content revision.');
++
++    $data['post_field_revision']['revision_id']['relationship']['id'] = 'standard';
++    $data['post_field_revision']['revision_id']['relationship']['base'] = 'post_field_data';
++    $data['post_field_revision']['revision_id']['relationship']['base field'] = 'revision_id';
++    $data['post_field_revision']['revision_id']['relationship']['title'] = $this->t('Post Content');
++    $data['post_field_revision']['revision_id']['relationship']['label'] = $this->t('Get the actual post content from a post content revision.');
++
++
+     return $data;
+   }
+ 
+diff --git a/modules/social_features/social_post/src/Form/PostForm.php b/modules/social_features/social_post/src/Form/PostForm.php
+index 44698ca8a..cf2c6a57d 100644
+--- a/modules/social_features/social_post/src/Form/PostForm.php
++++ b/modules/social_features/social_post/src/Form/PostForm.php
+@@ -85,7 +85,12 @@ class PostForm extends ContentEntityForm {
+     }
+ 
+     if ($this->entity->isNew()) {
+-      unset($form['status']);
++      if ($this->entity->getEntityType()->isRevisionable()) {
++        $form['status']['#access'] = FALSE;
++      }
++      else {
++        unset($form['status']);
++      }
+     }
+     else {
+       $form['status']['#access'] = $this->currentUser->hasPermission('edit any post entities');
+@@ -276,6 +281,28 @@ class PostForm extends ContentEntityForm {
+           '%label' => $this->entity->label(),
+         ]));
+     }
++
++    $route_name = \Drupal::routeMatch()->getRouteName();
++    if ($this->entity->id()) {
++//      if ($this->entity->access('view')) {
++//        $form_state->setRedirect(
++//          'entity.post.canonical',
++//          ['post' => $this->entity->id()]
++//        );
++//      }
++//      else {
++//        $form_state->setRedirect('entity.post.collection');
++//      }
++      if ($route_name && $route_name == 'entity.post.add_form') {
++        $form_state->setRedirect('entity.post.collection');
++      }
++    }
++    else {
++      // In the unlikely case something went wrong on save, the Post will be
++      // rebuilt and Post form redisplayed the same way as in preview.
++      drupal_set_message(t('The post could not be saved.'), 'error');
++      $form_state->setRebuild();
++    }
+   }
+ 
+   /**
+diff --git a/modules/social_features/social_post/src/Form/PostTypeForm.php b/modules/social_features/social_post/src/Form/PostTypeForm.php
+index a2bc1f667..73ffaafc4 100644
+--- a/modules/social_features/social_post/src/Form/PostTypeForm.php
++++ b/modules/social_features/social_post/src/Form/PostTypeForm.php
+@@ -3,7 +3,12 @@
+ namespace Drupal\social_post\Form;
+ 
+ use Drupal\Core\Entity\EntityForm;
++use Drupal\Core\Entity\EntityFieldManagerInterface;
++use Drupal\Core\Field\BaseFieldDefinition;
+ use Drupal\Core\Form\FormStateInterface;
++use Drupal\Core\Entity\BundleEntityFormBase;
++use Drupal\Core\Entity\EntityTypeInterface;
++use Symfony\Component\DependencyInjection\ContainerInterface;
+ 
+ /**
+  * Class PostTypeForm.
+@@ -12,6 +17,32 @@ use Drupal\Core\Form\FormStateInterface;
+  */
+ class PostTypeForm extends EntityForm {
+ 
++  /**
++   * Entity field manager service.
++   *
++   * @var \Drupal\Core\Entity\EntityFieldManagerInterface
++   */
++  protected $entityFieldManager;
++
++  /**
++   * Constructs a new class instance.
++   *
++   * @param \Drupal\Core\Entity\EntityFieldManagerInterface $entity_field_manager
++   *   Entity field manager service.
++   */
++  public function __construct(EntityFieldManagerInterface $entity_field_manager) {
++    $this->entityFieldManager = $entity_field_manager;
++  }
++
++  /**
++   * {@inheritdoc}
++   */
++  public static function create(ContainerInterface $container) {
++    return new static(
++      $container->get('entity_field.manager')
++    );
++  }
++
+   /**
+    * {@inheritdoc}
+    */
+@@ -38,16 +69,77 @@ class PostTypeForm extends EntityForm {
+     ];
+ 
+     /* You will need additional form elements for your custom properties. */
++    $form['workflow'] = [
++      '#type' => 'details',
++      '#open' => TRUE,
++      '#title' => $this->t('Publishing options'),
++      '#group' => 'additional_settings',
++    ];
++
++    $form['workflow']['options'] = [
++      '#type' => 'checkboxes',
++      '#title' => $this->t('Default options'),
++      '#default_value' => $this->getWorkflowOptions(),
++      '#options' => [
++        'status' => $this->t('Published'),
++        'revision' => $this->t('Create new revision'),
++      ],
++    ];
++
++    $form['workflow']['options']['status']['#description'] = $this->t('Post will be automatically published when created.');
++    $form['workflow']['options']['revision']['#description'] = $this->t('Automatically create new revisions. Users with the "Administer Posts" permission will be able to override this option.');
+ 
+     return $form;
+   }
+ 
++  /**
++   * Form submission handler to rebuild the form on select submit.
++   *
++   * @param array $form
++   *   Full form array.
++   * @param \Drupal\Core\Form\FormStateInterface $form_state
++   *   Current form state.
++   */
++  public static function rebuildSubmit(array &$form, FormStateInterface $form_state) {
++    $form_state->setRebuild();
++  }
++
++  /**
++   * Prepares workflow options to be used in the 'checkboxes' form element.
++   *
++   * @return array
++   *   Array of options ready to be used in #options.
++   */
++  protected function getWorkflowOptions() {
++    $workflow_options = [
++      'status' => $this->entity->getStatus(),
++      'revision' => $this->entity->shouldCreateNewRevision(),
++    ];
++    // Prepare workflow options to be used for 'checkboxes' form element.
++    $keys = array_keys(array_filter($workflow_options));
++    return array_combine($keys, $keys);
++  }
++
++  /**
++   * {@inheritdoc}
++   */
++  public function submitForm(array &$form, FormStateInterface $form_state) {
++    parent::submitForm($form, $form_state);
++
++    $this->entity->setStatus((bool) $form_state->getValue(['options', 'status']))
++      ->setNewRevision((bool) $form_state->getValue(['options', 'revision']));
++  }
++
+   /**
+    * {@inheritdoc}
+    */
+   public function save(array $form, FormStateInterface $form_state) {
++    $definition_update_manager = \Drupal::entityDefinitionUpdateManager();
++    $entity_type = $definition_update_manager->getEntityType('post');
++    $entity_type_id = $entity_type->id();
++
+     $post_type = $this->entity;
+-    $status = $post_type->save();
++    $status = parent::save($form, $form_state);
+ 
+     switch ($status) {
+       case SAVED_NEW:
+@@ -61,6 +153,16 @@ class PostTypeForm extends EntityForm {
+           '%label' => $post_type->label(),
+         ]));
+     }
++
++    // Override the "status" base field default value, for this post type.
++    $fields = $this->entityFieldManager->getFieldDefinitions('post', $entity_type_id);
++    /** @var \Drupal\social_post\Entity\PostInterface $post */
++    $post = $this->entityTypeManager->getStorage('post')->create(['type' => $entity_type_id]);
++    $value = (bool) $form_state->getValue(['options', 'status']);
++    if ($post->status->value != $value) {
++      $fields['status']->getConfig($entity_type_id)->setDefaultValue($value)->save();
++    }
++
+     $form_state->setRedirectUrl($post_type->toUrl('collection'));
+   }
+ 
+diff --git a/modules/social_features/social_post/src/ModeratedPostListBuilder.php b/modules/social_features/social_post/src/ModeratedPostListBuilder.php
+new file mode 100644
+index 000000000..f747385de
+--- /dev/null
++++ b/modules/social_features/social_post/src/ModeratedPostListBuilder.php
+@@ -0,0 +1,128 @@
++<?php
++
++namespace Drupal\social_post;
++
++use Drupal\Core\Datetime\DateFormatterInterface;
++use Drupal\Core\Entity\EntityInterface;
++use Drupal\Core\Entity\EntityStorageInterface;
++use Drupal\Core\Entity\EntityTypeInterface;
++use Drupal\Core\Entity\EntityTypeManagerInterface;
++use Drupal\Core\Routing\RedirectDestinationInterface;
++use Drupal\social_post\PostListBuilder;
++use Symfony\Component\DependencyInjection\ContainerInterface;
++
++/**
++ * Defines a class to build a listing of moderated post entities.
++ */
++class ModeratedPostListBuilder extends PostListBuilder {
++
++  /**
++   * The entity storage class.
++   *
++   * @var \Drupal\Core\Entity\RevisionableStorageInterface
++   */
++  protected $storage;
++
++  /**
++   * The entity type manager.
++   *
++   * @var \Drupal\Core\Entity\EntityTypeManagerInterface
++   */
++  protected $entityTypeManager;
++
++  /**
++   * Constructs a new ModeratedPostListBuilder object.
++   *
++   * @param \Drupal\Core\Entity\EntityTypeInterface $entity_type
++   *   The entity type definition.
++   * @param \Drupal\Core\Entity\EntityStorageInterface $storage
++   *   The entity storage class.
++   * @param \Drupal\Core\Datetime\DateFormatterInterface $date_formatter
++   *   The date formatter service.
++   * @param \Drupal\Core\Routing\RedirectDestinationInterface $redirect_destination
++   *   The redirect destination service.
++   * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_type_manager
++   *   The entity type manager.
++   */
++  public function __construct(EntityTypeInterface $entity_type, EntityStorageInterface $storage, DateFormatterInterface $date_formatter, RedirectDestinationInterface $redirect_destination, EntityTypeManagerInterface $entity_type_manager) {
++    parent::__construct($entity_type, $storage, $date_formatter, $redirect_destination);
++
++    $this->entityTypeManager = $entity_type_manager;
++  }
++
++  /**
++   * {@inheritdoc}
++   */
++  public static function createInstance(ContainerInterface $container, EntityTypeInterface $entity_type) {
++    return new static(
++      $entity_type,
++      $container->get('entity.manager')->getStorage($entity_type->id()),
++      $container->get('date.formatter'),
++      $container->get('redirect.destination'),
++      $container->get('entity_type.manager')
++    );
++  }
++
++  /**
++   * {@inheritdoc}
++   */
++  public function load() {
++    $revision_ids = $this->getEntityRevisionIds();
++    return $this->storage->loadMultipleRevisions($revision_ids);
++  }
++
++  /**
++   * Loads entity revision IDs using a pager sorted by the entity revision ID.
++   *
++   * @return array
++   *   An array of entity revision IDs.
++   */
++  protected function getEntityRevisionIds() {
++    $query = $this->entityTypeManager->getStorage('content_moderation_state')->getAggregateQuery()
++      ->aggregate('content_entity_id', 'MAX')
++      ->groupBy('content_entity_revision_id')
++      ->condition('content_entity_type_id', $this->entityTypeId)
++      ->condition('moderation_state', 'published', '<>')
++      ->sort('content_entity_revision_id', 'DESC');
++
++    // Only add the pager if a limit is specified.
++    if ($this->limit) {
++      $query->pager($this->limit);
++    }
++
++    $result = $query->execute();
++
++    return $result ? array_column($result, 'content_entity_revision_id') : [];
++  }
++
++  /**
++   * {@inheritdoc}
++   */
++  public function buildHeader() {
++    $header = parent::buildHeader();
++    $header['status'] = $this->t('Moderation state');
++
++    return $header;
++  }
++
++  /**
++   * {@inheritdoc}
++   */
++  public function buildRow(EntityInterface $entity) {
++    $row = parent::buildRow($entity);
++    $row['status'] = $entity->moderation_state->value;
++
++    return $row;
++  }
++
++  /**
++   * {@inheritdoc}
++   */
++  public function render() {
++    $build = parent::render();
++    $build['table']['#empty'] = $this->t('There is no moderated @label yet. Only pending versions of @label, such as drafts, are listed here.', ['@label' => $this->entityType->getLabel()]);
++
++    return $build;
++  }
++
++}

@@ -27,7 +27,14 @@ use Drupal\Core\Config\Entity\ConfigEntityBundleBase;
  *   entity_keys = {
  *     "id" = "id",
  *     "label" = "label",
+ *     "status" = "status",
  *     "uuid" = "uuid"
+ *   },
+ *   config_export = {
+ *     "id",
+ *     "label",
+ *     "revision",
+ *     "status",
  *   },
  *   links = {
  *     "canonical" = "/admin/structure/post/{post_type}",
@@ -53,5 +60,61 @@ class PostType extends ConfigEntityBundleBase implements PostTypeInterface {
    * @var string
    */
   protected $label;
+
+  /**
+   * Whether posts should be published by default.
+   *
+   * @var bool
+   */
+  protected $status = TRUE;
+
+  /**
+   * Default value of the 'Create new revision' checkbox of this post type.
+   *
+   * @var bool
+   */
+  protected $revision = FALSE;
+
+  /**
+   * A brief description of this post type.
+   *
+   * @var string
+   */
+  protected $description;
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getStatus() {
+    return $this->status;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getDescription() {
+    return $this->description;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function setDescription($description) {
+    return $this->set('description', $description);
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function shouldCreateNewRevision() {
+    return $this->revision;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function setNewRevision($revision) {
+    return $this->set('revision', $revision);
+  }
 
 }

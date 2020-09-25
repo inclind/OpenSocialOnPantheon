@@ -57,7 +57,9 @@ function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
     var statusText = void 0;
     var responseText = void 0;
     if (xmlhttp.status) {
-      statusCode = '\n' + Drupal.t('An AJAX HTTP error occurred.') + '\n' + Drupal.t('HTTP Result Code: !status', { '!status': xmlhttp.status });
+      statusCode = '\n' + Drupal.t('An AJAX HTTP error occurred.') + '\n' + Drupal.t('HTTP Result Code: !status', {
+        '!status': xmlhttp.status
+      });
     } else {
       statusCode = '\n' + Drupal.t('An AJAX HTTP request terminated abnormally.');
     }
@@ -145,12 +147,18 @@ function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
         elementSettings.url = href;
         elementSettings.event = 'click';
       }
+      var type = $linkElement.data('ajax-type');
+
+      if (type) {
+        elementSettings.type = type;
+      }
       Drupal.ajax(elementSettings);
     });
   };
 
   Drupal.Ajax = function (base, element, elementSettings) {
     var defaults = {
+      type: 'POST',
       event: element ? 'mousedown' : null,
       keypress: true,
       selector: base ? '#' + base : null,
@@ -241,7 +249,8 @@ function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
       },
 
       dataType: 'json',
-      type: 'POST'
+      jsonp: false,
+      type: ajax.type
     };
 
     if (elementSettings.dialog) {

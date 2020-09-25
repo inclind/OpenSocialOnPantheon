@@ -2,8 +2,10 @@
 
 namespace Drupal\social_post\Entity;
 
-use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\Core\Entity\EntityChangedInterface;
+use Drupal\Core\Entity\ContentEntityInterface;
+use Drupal\Core\Entity\EntityPublishedInterface;
+use Drupal\Core\Entity\RevisionLogInterface;
 use Drupal\user\EntityOwnerInterface;
 
 /**
@@ -11,7 +13,7 @@ use Drupal\user\EntityOwnerInterface;
  *
  * @ingroup social_post
  */
-interface PostInterface extends ContentEntityInterface, EntityChangedInterface, EntityOwnerInterface {
+interface PostInterface extends ContentEntityInterface, EntityChangedInterface, RevisionLogInterface, EntityOwnerInterface, EntityPublishedInterface {
 
   /**
    * Returns the post type.
@@ -69,6 +71,6 @@ interface PostInterface extends ContentEntityInterface, EntityChangedInterface, 
    * @return \Drupal\social_post\Entity\PostInterface
    *   The called Post entity.
    */
-  public function setPublished($published);
+  public function setPublished($published = NULL);
 
 }

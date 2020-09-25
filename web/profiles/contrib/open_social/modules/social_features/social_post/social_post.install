@@ -5,7 +5,10 @@
  * Install, update and uninstall functions for the social_post module.
  */
 
+use Drupal\Core\Site\Settings;
 use Drupal\user\Entity\Role;
+use Drupal\Core\Field\BaseFieldDefinition;
+use Drupal\Core\StringTranslation\TranslatableMarkup;
 
 /**
  * PROCEED WITH CARE HERE!
@@ -67,6 +70,7 @@ function _social_post_get_permissions($role) {
   // Authenticated.
   $permissions['authenticated'] = array_merge($permissions['anonymous'], [
     'add post entities',
+    'add post post entities',
     'delete own post entities',
     'edit own post entities',
     'view community posts',
@@ -91,9 +95,119 @@ function _social_post_get_permissions($role) {
 }
 
 /**
+ * Make Social Post entities revisionable.
+ */
+function social_post_update_8001() {
+  $definition_update_manager = \Drupal::entityDefinitionUpdateManager();
+  $entity_type = $definition_update_manager->getEntityType('post');
+  $entity_type_id = $entity_type->id();
+
+  // 1. Fix the post entity type to specify its revision data table.
+
+  $entity_type->set('revision_table', 'post_revision');
+  $entity_type->set('revision_data_table', 'post_field_revision');
+  $definition_update_manager->updateEntityType($entity_type);
+
+  // 2. Add a publishing status field for post entities.
+
+  // Add the published entity key to the post entity type.
+  $entity_keys = $entity_type->getKeys();
+  $entity_keys['published'] = 'status';
+  $entity_keys['status'] = 'status';
+  $entity_keys['revision'] = 'revision_id';
+  $entity_type->set('entity_keys', $entity_keys);
+  $definition_update_manager->updateEntityType($entity_type);
+
+  // Add the publishing status field to the post entity type.
+  $status = BaseFieldDefinition::create('boolean')
+    ->setLabel(new TranslatableMarkup('Publishing status'))
+    ->setDescription(new TranslatableMarkup('A boolean indicating the published state.'))
+    ->setRevisionable(TRUE)
+    ->setTranslatable(TRUE)
+    ->setDefaultValue(TRUE);
+
+  $has_content_translation_status_field = \Drupal::moduleHandler()->moduleExists('content_translation') && $definition_update_manager->getFieldStorageDefinition('content_translation_status', $entity_type_id);
+  if ($has_content_translation_status_field) {
+    $status->setInitialValueFromField('content_translation_status', TRUE);
+  }
+  else {
+    $status->setInitialValue(TRUE);
+  }
+  $definition_update_manager->installFieldStorageDefinition('status', $entity_type_id, $entity_type_id, $status);
+
+  // 3. Add 'revision_created' and 'revision_user' fields to 'post' entities.
+
+  $revision_created = BaseFieldDefinition::create('created')
+    ->setLabel(t('Revision create time'))
+    ->setDescription(t('The time that the current revision was created.'))
+    ->setRevisionable(TRUE);
+
+  $definition_update_manager->installFieldStorageDefinition('revision_created', $entity_type_id, $entity_type_id, $revision_created);
+
+  $revision_user = BaseFieldDefinition::create('entity_reference')
+    ->setLabel(t('Revision user'))
+    ->setDescription(t('The user ID of the author of the current revision.'))
+    ->setSetting('target_type', 'user')
+    ->setRevisionable(TRUE);
+
+  $definition_update_manager->installFieldStorageDefinition('revision_user', $entity_type_id, $entity_type_id, $revision_user);
+
+  $revision_log_message = BaseFieldDefinition::create('string_long')
+    ->setLabel(t('Revision log message'))
+    ->setDescription(t('Briefly describe the changes you have made.'))
+    ->setRevisionable(TRUE)
+    ->setDefaultValue('')
+    ->setDisplayOptions('form', [
+      'type' => 'string_textarea',
+      'weight' => 25,
+      'settings' => [
+        'rows' => 4,
+      ],
+    ]);
+  $definition_update_manager->installFieldStorageDefinition('revision_log_message', $entity_type_id, $entity_type_id, $revision_log_message);
+
+
+  // 4. Uninstall the 'content_translation_status' field if needed.
+  $database = \Drupal::database();
+  if ($has_content_translation_status_field) {
+    // First we have to remove the field data.
+    $database->update($entity_type->getDataTable())
+      ->fields(['content_translation_status' => NULL])
+      ->execute();
+
+    // A site may have disabled revisionability for this entity type.
+    if ($entity_type->isRevisionable()) {
+      $database->update($entity_type->getRevisionDataTable())
+        ->fields(['content_translation_status' => NULL])
+        ->execute();
+    }
+
+    $content_translation_status = $definition_update_manager->getFieldStorageDefinition('content_translation_status', $entity_type_id);
+    $definition_update_manager->uninstallFieldStorageDefinition($content_translation_status);
+  }
+
+  return t('@entity_type_label has been converted to revisionable and publishable.', ['@entity_type_label' => $entity_type->getLabel()]);
+
+}
+
+/**
  * Implements hook_update_dependencies().
  */
 function social_post_update_dependencies() {
+  // The update function that adds the status field must run after
+  // content_translation_update_8400() which fixes NULL values for the
+  // 'content_translation_status' field.
+  if (\Drupal::moduleHandler()->moduleExists('content_translation')) {
+    $dependencies['social_post'][8001] = [
+      'content_translation' => 8400,
+    ];
+  }
+  else {
+    $dependencies['social_post'][8001] = [ // or 8501 ??
+      'system' => 8403,
+    ];
+  }
+
   // Run the activities view mode update after the final features removal ran.
   $dependencies['social_post'][8801] = [
     'social_core' => 8802,
@@ -107,4 +221,54 @@ function social_post_update_dependencies() {
  */
 function social_post_update_8801() {
   activity_creator_set_entity_view_mode('post', 'activity');
+}
+
+/**
+ * Give access to creating posts of specific types.
+ */
+function social_post_update_8802(&$sandbox) {
+  if (!isset($sandbox['total'])) {
+    $sandbox['total'] = \Drupal::entityQuery('user_role')
+      ->condition('id', 'administrator', '<>')
+      ->count()
+      ->execute();
+
+    $sandbox['processed'] = 0;
+    $sandbox['limit'] = Settings::get('entity_update_batch_size', 50);
+    $sandbox['permissions'] = array_keys(\Drupal::service('social_post.permission_generator')->permissions());
+  }
+
+  $role_ids = \Drupal::entityQuery('user_role')
+    ->condition('id', 'administrator', '<>')
+    ->range($sandbox['processed'], $sandbox['limit'])
+    ->execute();
+
+  $storage = \Drupal::entityTypeManager()->getStorage('user_role');
+
+  foreach ($role_ids as $role_id) {
+    /** @var \Drupal\user\RoleInterface $role */
+    $role = $storage->load($role_id);
+
+    if ($role->hasPermission('add post entities')) {
+      user_role_grant_permissions($role_id, $sandbox['permissions']);
+    }
+  }
+
+  $sandbox['processed'] += count($role_ids);
+
+  $sandbox['#finished'] = $sandbox['processed'] / $sandbox['total'];
+}
+
+/**
+ * Update likes in post activity and comment view modes.
+ */
+function social_post_update_8901() {
+  /** @var \Drupal\update_helper\Updater $updateHelper */
+  $updateHelper = \Drupal::service('update_helper.updater');
+
+  // Execute configuration update definitions with logging of success.
+  $updateHelper->executeUpdate('social_post', 'social_post_update_8901');
+
+  // Output logged messages to related channel of update execution.
+  return $updateHelper->logger()->output();
 }

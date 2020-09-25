@@ -1,0 +1,7 @@
+social_post.admin_moderated_posts:
+  path: '/admin/content/post/moderated'
+  defaults:
+    _controller: '\Drupal\social_post\Controller\ModeratedPostController::postsListing'
+    _title: 'Moderated posts content'
+  requirements:
+    _permission: 'view unpublished post entities'

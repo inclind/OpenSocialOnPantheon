@@ -14,6 +14,9 @@ votingapi.settings:
     delete_everywhere:
       type: boolean
       label: 'Delete everywhere'
+    anonymous_vote_restrictions:
+      type: string
+      label: 'Anonymous vote restrictions'
 
 votingapi.vote_type.*:
   type: config_entity

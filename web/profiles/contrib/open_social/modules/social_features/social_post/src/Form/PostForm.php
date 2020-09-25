@@ -85,7 +85,12 @@ class PostForm extends ContentEntityForm {
     }
 
     if ($this->entity->isNew()) {
-      unset($form['status']);
+      if ($this->entity->getEntityType()->isRevisionable()) {
+        $form['status']['#access'] = FALSE;
+      }
+      else {
+        unset($form['status']);
+      }
     }
     else {
       $form['status']['#access'] = $this->currentUser->hasPermission('edit any post entities');
@@ -144,7 +149,7 @@ class PostForm extends ContentEntityForm {
 
     // For the explanation of the numbers see
     // field.storage.post.field_visibility.
-    if ($display_id === $this->postViewDefault) {
+    if ($display_id === $this->postViewDefault || $display_id === $this->postViewProfile) {
       // Set default value to community.
       unset($form['field_visibility']['widget'][0]['#options'][0]);
 
@@ -275,6 +280,28 @@ class PostForm extends ContentEntityForm {
         drupal_set_message($this->t('Your post %label has been saved.', [
           '%label' => $this->entity->label(),
         ]));
+    }
+
+    $route_name = \Drupal::routeMatch()->getRouteName();
+    if ($this->entity->id()) {
+//      if ($this->entity->access('view')) {
+//        $form_state->setRedirect(
+//          'entity.post.canonical',
+//          ['post' => $this->entity->id()]
+//        );
+//      }
+//      else {
+//        $form_state->setRedirect('entity.post.collection');
+//      }
+      if ($route_name && $route_name == 'entity.post.add_form') {
+        $form_state->setRedirect('entity.post.collection');
+      }
+    }
+    else {
+      // In the unlikely case something went wrong on save, the Post will be
+      // rebuilt and Post form redisplayed the same way as in preview.
+      drupal_set_message(t('The post could not be saved.'), 'error');
+      $form_state->setRebuild();
     }
   }
 

@@ -7,6 +7,7 @@
 
 use Drupal\Core\Render\BubbleableMetadata;
 use Drupal\profile\Entity\ProfileType;
+use Drupal\user\UserInterface;
 
 /**
  * Implements hook_token_info_alter().
@@ -31,8 +32,12 @@ function profile_token_info_alter(&$info) {
 function profile_tokens($type, array $tokens, array $data = [], array $options = [], BubbleableMetadata $bubbleable_metadata) {
   $replacements = [];
   // Entity tokens on the Drupal user object.
-  if ($type == 'entity' && $data['entity_type'] == 'user' && $data['token_type'] == 'user') {
+  if ($type == 'entity' && !empty($data['entity_type']) && !empty($data['entity']) && !empty($data['token_type'])) {
     $user = $data['entity'];
+    if (!($user instanceof UserInterface)) {
+      return $replacements;
+    }
+
     foreach ($tokens as $name => $original) {
       // Split the token name to see if it is a profile type.
       $parts = explode(':', $name);
@@ -43,10 +48,9 @@ function profile_tokens($type, array $tokens, array $data = [], array $options =
 
         /** @var \Drupal\profile\ProfileStorageInterface $storage */
         $storage = \Drupal::entityTypeManager()->getStorage('profile');
-        $profile = $storage->loadByUser($user, $profile_type, TRUE);
+        $profile = $storage->loadByUser($user, $profile_type);
 
         if (!empty($profile)) {
-
           // If the token contains prefixes, invoke the field token generators.
           if (count($parts) > 1 && $profile_tokens = \Drupal::token()->findWithPrefix($tokens, $profile_type)) {
             $profile_token_data = [

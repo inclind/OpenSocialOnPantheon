@@ -94,10 +94,11 @@ class SettingsForm extends ConfigFormBase {
       604800,
     ];
 
-    $options = [];
+    $options = [0 => "Immediately"];
     foreach ($unit_options as $option) {
       $options[$option] = $this->dateFormatter->formatInterval($option);;
     }
+    $options[-1] = "Never";
 
     $form['anonymous_window'] = [
       '#type' => 'select',
@@ -113,6 +114,18 @@ class SettingsForm extends ConfigFormBase {
       '#description' => $this->t('The amount of time that must pass before two registered user votes from the same user ID are considered unique. Setting this to \'never\' will eliminate most double-voting for registered users.'),
       '#options' => $options,
       '#default_value' => $config->get('user_window'),
+    ];
+
+    $form['anonymous_vote_restrictions'] = [
+      '#type' => 'radios',
+      '#title' => $this->t('Anonymous Vote Source restrictions'),
+      '#description' => $this->t('Enable to differentiate votes from same IP (e.g. private network, public place).'),
+      '#default_value' => !empty($config->get('anonymous_vote_restrictions')) ? $config->get('anonymous_vote_restrictions') : 'ip',
+      '#options' => [
+        'ip' => t('One vote per IP'),
+        'session' => t('One vote per session'),
+      ],
+      '#required' => TRUE,
     ];
 
     $form['calculation_schedule'] = [
@@ -148,6 +161,7 @@ class SettingsForm extends ConfigFormBase {
       'user_window',
       'calculation_schedule',
       'delete_everywhere',
+      'anonymous_vote_restrictions',
     ];
     foreach ($settings as $setting) {
       $config->set($setting, $form_state->getValue($setting));

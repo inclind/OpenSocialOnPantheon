@@ -3,6 +3,7 @@
 namespace Drupal\views;
 
 use Drupal\Core\DependencyInjection\DeprecatedServicePropertyTrait;
+use Drupal\Component\Utility\NestedArray;
 use Drupal\Core\Entity\ContentEntityType;
 use Drupal\Core\Entity\EntityFieldManagerInterface;
 use Drupal\Core\Entity\EntityHandlerInterface;
@@ -143,7 +144,8 @@ class EntityViewsData implements EntityHandlerInterface, EntityViewsDataInterfac
     $base_table = $this->entityType->getBaseTable() ?: $this->entityType->id();
     $views_revision_base_table = NULL;
     $revisionable = $this->entityType->isRevisionable();
-    $base_field = $this->entityType->getKey('id');
+    $entity_id_key = $this->entityType->getKey('id');
+    $base_field = $entity_id_key;
 
     $revision_table = '';
     if ($revisionable) {
@@ -164,7 +166,8 @@ class EntityViewsData implements EntityHandlerInterface, EntityViewsDataInterfac
     if ($revisionable && $translatable) {
       $revision_data_table = $this->entityType->getRevisionDataTable() ?: $this->entityType->id() . '_field_revision';
     }
-    $revision_field = $this->entityType->getKey('revision');
+    $entity_revision_key = $this->entityType->getKey('revision');
+    $revision_field = $entity_revision_key;
 
     // Setup base information of the views data.
     $data[$base_table]['table']['group'] = $this->entityType->getLabel();
@@ -234,6 +237,7 @@ class EntityViewsData implements EntityHandlerInterface, EntityViewsDataInterfac
         'field' => $base_field,
         'type' => 'INNER',
       ];
+
       $data[$data_table]['table']['group'] = $this->entityType->getLabel();
       $data[$data_table]['table']['provider'] = $this->entityType->getProvider();
       $data[$data_table]['table']['entity revision'] = FALSE;
@@ -282,6 +286,22 @@ class EntityViewsData implements EntityHandlerInterface, EntityViewsDataInterfac
           'filter' => ['id' => 'latest_translation_affected_revision'],
         ];
       }
+      // Add a relationship from the revision table back to the main table.
+      $entity_type_label = $this->entityType->getLabel();
+      $data[$views_revision_base_table][$entity_id_key]['relationship'] = [
+        'id' => 'standard',
+        'base' => $views_base_table,
+        'base field' => $entity_id_key,
+        'title' => $entity_type_label,
+        'help' => $this->t('Get the actual @label from a @label revision', ['@label' => $entity_type_label]),
+      ];
+      $data[$views_revision_base_table][$entity_revision_key]['relationship'] = [
+        'id' => 'standard',
+        'base' => $views_base_table,
+        'base field' => $entity_revision_key,
+        'title' => $this->t('@label revision', ['@label' => $entity_type_label]),
+        'help' => $this->t('Get the actual @label from a @label revision', ['@label' => $entity_type_label]),
+      ];
     }
 
     $this->addEntityLinks($data[$base_table]);
@@ -422,7 +442,10 @@ class EntityViewsData implements EntityHandlerInterface, EntityViewsDataInterfac
     //   mapSingleFieldViewsData() method does with $first.
     $first = TRUE;
     foreach ($field_column_mapping as $field_column_name => $schema_field_name) {
-      $table_data[$schema_field_name] = $this->mapSingleFieldViewsData($table, $field_name, $field_definition_type, $field_column_name, $field_schema['columns'][$field_column_name]['type'], $first, $field_definition);
+      // The fields might be defined before the actual table.
+      $table_data = $table_data ?: [];
+      $table_data += [$schema_field_name => []];
+      $table_data[$schema_field_name] = NestedArray::mergeDeep($table_data[$schema_field_name], $this->mapSingleFieldViewsData($table, $field_name, $field_definition_type, $field_column_name, $field_schema['columns'][$field_column_name]['type'], $first, $field_definition));
       $table_data[$schema_field_name]['entity field'] = $field_name;
       $first = FALSE;
     }

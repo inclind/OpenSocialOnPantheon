@@ -17,19 +17,22 @@
 
 class Google_Service_Dataproc_InstanceGroupConfig extends Google_Collection
 {
-  protected $collection_key = 'instanceNames';
+  protected $collection_key = 'instanceReferences';
   protected $acceleratorsType = 'Google_Service_Dataproc_AcceleratorConfig';
   protected $acceleratorsDataType = 'array';
   protected $diskConfigType = 'Google_Service_Dataproc_DiskConfig';
   protected $diskConfigDataType = '';
   public $imageUri;
   public $instanceNames;
+  protected $instanceReferencesType = 'Google_Service_Dataproc_InstanceReference';
+  protected $instanceReferencesDataType = 'array';
   public $isPreemptible;
   public $machineTypeUri;
   protected $managedGroupConfigType = 'Google_Service_Dataproc_ManagedGroupConfig';
   protected $managedGroupConfigDataType = '';
   public $minCpuPlatform;
   public $numInstances;
+  public $preemptibility;
 
   /**
    * @param Google_Service_Dataproc_AcceleratorConfig
@@ -74,6 +77,20 @@ class Google_Service_Dataproc_InstanceGroupConfig extends Google_Collection
   public function getInstanceNames()
   {
     return $this->instanceNames;
+  }
+  /**
+   * @param Google_Service_Dataproc_InstanceReference
+   */
+  public function setInstanceReferences($instanceReferences)
+  {
+    $this->instanceReferences = $instanceReferences;
+  }
+  /**
+   * @return Google_Service_Dataproc_InstanceReference
+   */
+  public function getInstanceReferences()
+  {
+    return $this->instanceReferences;
   }
   public function setIsPreemptible($isPreemptible)
   {
@@ -120,5 +137,13 @@ class Google_Service_Dataproc_InstanceGroupConfig extends Google_Collection
   public function getNumInstances()
   {
     return $this->numInstances;
+  }
+  public function setPreemptibility($preemptibility)
+  {
+    $this->preemptibility = $preemptibility;
+  }
+  public function getPreemptibility()
+  {
+    return $this->preemptibility;
   }
 }

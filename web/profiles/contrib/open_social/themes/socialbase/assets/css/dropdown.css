@@ -4,15 +4,27 @@
   height: 0;
   margin-left: 2px;
   vertical-align: middle;
-  border-top: 4px dashed;
-  border-top: 4px solid \9 ;
-  border-right: 4px solid transparent;
-  border-left: 4px solid transparent;
+  border-top: 5px dashed;
+  border-top: 5px solid \9 ;
+  border-right: 5px solid transparent;
+  border-left: 5px solid transparent;
 }
 
 .dropup,
 .dropdown {
   position: relative;
+}
+
+.dropup.has-alert.has-alert--desktop > a:before,
+.dropdown.has-alert.has-alert--desktop > a:before {
+  content: '';
+  position: absolute;
+  top: 11px;
+  right: 7px;
+  width: 12px;
+  height: 12px;
+  background-color: #777777;
+  border-radius: 50%;
 }
 
 .dropdown-toggle:focus {
@@ -26,7 +38,7 @@
   z-index: 1000;
   display: none;
   float: left;
-  min-width: 275px;
+  min-width: 185px;
   max-width: 500px;
   padding: 5px 0;
   margin: 2px 0 0;

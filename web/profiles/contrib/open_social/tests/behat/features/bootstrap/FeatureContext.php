@@ -45,12 +45,21 @@ class FeatureContext extends RawMinkContext implements Context, SnippetAccepting
      * @param \Behat\Behat\Hook\Scope\BeforeScenarioScope $scope
      */
     public function before(BeforeScenarioScope $scope) {
+      // Start a session if not already done.
+      // Needed since https://github.com/minkphp/Mink/pull/705
+      // Otherwise resizeWindow will throw an error.
+      if (!$this->getSession()->isStarted()) {
+        $this->getSession()->start();
+      }
+
       // Let's disable the tour module for all tests by default.
       \Drupal::configFactory()->getEditable('social_tour.settings')->set('social_tour_enabled', 0)->save();
 
       /** @var \Behat\Testwork\Environment\Environment $environment */
       $environment = $scope->getEnvironment();
       $this->minkContext = $environment->getContext(SocialMinkContext::class);
+
+      $this->getSession()->resizeWindow(1280, 2024, 'current');
     }
 
   /**
@@ -354,6 +363,23 @@ class FeatureContext extends RawMinkContext implements Context, SnippetAccepting
     }
 
     /**
+     * @When /^I click the group member dropdown/
+     */
+    public function iClickGroupMemberDropdown()
+    {
+      $locator = '.add-users-dropbutton .dropdown-toggle';
+      $session = $this->getSession();
+      $element = $session->getPage()->find('css', $locator);
+
+      if ($element === NULL) {
+        throw new \InvalidArgumentException(sprintf('Could not evaluate CSS selector: "%s"', $locator));
+      }
+
+      // Now click the element.
+      $element->click();
+    }
+
+    /**
      * @When I click radio button :label with the id :id
      * @When I click radio button :label
      */
@@ -474,14 +500,6 @@ class FeatureContext extends RawMinkContext implements Context, SnippetAccepting
         array_search($checkAfter, $items),
         "$textBefore does not proceed $textAfter"
       );
-    }
-
-    /**
-     * @BeforeScenario
-     */
-    public function resizeWindow()
-    {
-      $this->getSession()->resizeWindow(1280, 2024, 'current');
     }
 
     /**

@@ -73,6 +73,8 @@ class Google_Service_Container_Cluster extends Google_Collection
   protected $nodePoolsDataType = 'array';
   protected $privateClusterConfigType = 'Google_Service_Container_PrivateClusterConfig';
   protected $privateClusterConfigDataType = '';
+  protected $releaseChannelType = 'Google_Service_Container_ReleaseChannel';
+  protected $releaseChannelDataType = '';
   public $resourceLabels;
   protected $resourceUsageExportConfigType = 'Google_Service_Container_ResourceUsageExportConfig';
   protected $resourceUsageExportConfigDataType = '';
@@ -86,6 +88,8 @@ class Google_Service_Container_Cluster extends Google_Collection
   public $tpuIpv4CidrBlock;
   protected $verticalPodAutoscalingType = 'Google_Service_Container_VerticalPodAutoscaling';
   protected $verticalPodAutoscalingDataType = '';
+  protected $workloadIdentityConfigType = 'Google_Service_Container_WorkloadIdentityConfig';
+  protected $workloadIdentityConfigDataType = '';
   public $zone;
 
   /**
@@ -494,6 +498,20 @@ class Google_Service_Container_Cluster extends Google_Collection
   {
     return $this->privateClusterConfig;
   }
+  /**
+   * @param Google_Service_Container_ReleaseChannel
+   */
+  public function setReleaseChannel(Google_Service_Container_ReleaseChannel $releaseChannel)
+  {
+    $this->releaseChannel = $releaseChannel;
+  }
+  /**
+   * @return Google_Service_Container_ReleaseChannel
+   */
+  public function getReleaseChannel()
+  {
+    return $this->releaseChannel;
+  }
   public function setResourceLabels($resourceLabels)
   {
     $this->resourceLabels = $resourceLabels;
@@ -591,6 +609,20 @@ class Google_Service_Container_Cluster extends Google_Collection
   public function getVerticalPodAutoscaling()
   {
     return $this->verticalPodAutoscaling;
+  }
+  /**
+   * @param Google_Service_Container_WorkloadIdentityConfig
+   */
+  public function setWorkloadIdentityConfig(Google_Service_Container_WorkloadIdentityConfig $workloadIdentityConfig)
+  {
+    $this->workloadIdentityConfig = $workloadIdentityConfig;
+  }
+  /**
+   * @return Google_Service_Container_WorkloadIdentityConfig
+   */
+  public function getWorkloadIdentityConfig()
+  {
+    return $this->workloadIdentityConfig;
   }
   public function setZone($zone)
   {

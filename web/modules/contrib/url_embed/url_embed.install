@@ -63,7 +63,7 @@ function url_embed_update_8002() {
   $config_factory = \Drupal::configFactory();
   $config = $config_factory->getEditable('url_embed.settings');
   if ($config->isNew()) {
-    $data = ['cache_expiration' => 3600];
-    $config->setData($data)->save();
+    $config->set('cache_expiration', 3600);
+    $config->save();
   }
 }

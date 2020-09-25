@@ -7,6 +7,7 @@ use Drupal\Core\Access\AccessResult;
 use Drupal\node\NodeInterface;
 use Drupal\group\Entity\GroupContent;
 use Drupal\group\Entity\Group;
+use Drupal\social_event\EventEnrollmentInterface;
 
 /**
  * Helper class for checking entity access.
@@ -33,7 +34,8 @@ class EntityAccessHelper {
       // Check published status.
       if (isset($node->status) && $node->status->value == NODE_NOT_PUBLISHED) {
         $unpublished_own = $account->hasPermission('view own unpublished content');
-        if (($node->getOwnerId() !== $account->id()) || ($node->getOwnerId() === $account->id() && !$unpublished_own)) {
+        $unpublished_any = $account->hasPermission('view any unpublished content');
+        if ((($node->getOwnerId() !== $account->id()) || ($node->getOwnerId() === $account->id()) && !$unpublished_own) && !$unpublished_any) {
           return 1;
         }
       }
@@ -101,6 +103,32 @@ class EntityAccessHelper {
    */
   public static function getEntityAccessResult(NodeInterface $node, $op, AccountInterface $account) {
     $access = EntityAccessHelper::nodeAccessCheck($node, $op, $account);
+
+    $moduleHandler = \Drupal::service('module_handler');
+    // If the social_event_invite module is enabled and a person got invited
+    // then allow access to view the node.
+    // Todo:: Come up with a better solution for this code.
+    if ($moduleHandler->moduleExists('social_event_invite')) {
+      if ($op == 'view') {
+        $conditions = [
+          'field_account' => $account->id(),
+          'field_event' => $node->id(),
+        ];
+
+        // Load the current Event enrollments so we can check duplicates.
+        $storage = \Drupal::entityTypeManager()->getStorage('event_enrollment');
+        $enrollments = $storage->loadByProperties($conditions);
+
+        if ($enrollment = array_pop($enrollments)) {
+          if ($enrollment->field_request_or_invite_status
+            && (int) $enrollment->field_request_or_invite_status->value !== EventEnrollmentInterface::REQUEST_OR_INVITE_DECLINED
+            && (int) $enrollment->field_request_or_invite_status->value !== EventEnrollmentInterface::INVITE_INVALID_OR_EXPIRED) {
+            $access = 2;
+          }
+        }
+      }
+
+    }
 
     switch ($access) {
       case 2:

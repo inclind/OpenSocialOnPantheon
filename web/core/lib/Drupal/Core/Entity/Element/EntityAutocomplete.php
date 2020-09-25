@@ -10,6 +10,7 @@ use Drupal\Core\Entity\EntityReferenceSelection\SelectionWithAutocreateInterface
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Render\Element\Textfield;
 use Drupal\Core\Site\Settings;
+use Drupal\views\Views;
 
 /**
  * Provides an entity autocomplete form element.
@@ -68,9 +69,14 @@ class EntityAutocomplete extends Textfield {
           throw new \InvalidArgumentException('The #default_value property has to be an entity object or an array of entity objects.');
         }
 
-        // Extract the labels from the passed-in entity objects, taking access
-        // checks into account.
-        return static::getEntityLabels($element['#default_value']);
+        if ($element['#selection_handler'] == 'views') {
+          return static::getEntityViewsResults($element);
+        }
+        else {
+          // Extract the labels from the passed-in entity objects, taking access
+          // checks into account.
+          return static::getEntityLabels($element['#default_value']);
+        }
       }
     }
 
@@ -339,6 +345,56 @@ class EntityAutocomplete extends Textfield {
     }
 
     return implode(', ', $entity_labels);
+  }
+
+  public static function getEntityViewsResults($element) {
+    $entity_ids = array();
+    // Use the rendered view row to display the referenced entity.
+    $display_name = $element['#selection_settings']['view']['display_name'];
+    $arguments = $element['#selection_settings']['view']['arguments'];
+    $view_name = $element['#selection_settings']['view']['view_name'];
+    $widget_has_tags = $element['#tags'];
+
+    // Check that the view is valid and the display still exists.
+    $view = Views::getView($view_name);
+
+    if (!$view) {
+      drupal_set_message(t('The reference view %view_name cannot be found.', array('%view_name' => $view_name)), 'warning');
+      return FALSE;
+    }
+    if (!$view->access($display_name)) {
+      drupal_set_message(t('You do no have access to the reference view %view_name.', array('%view_name' => $view_name)), 'warning');
+      return FALSE;
+    }
+    $view->setDisplay($display_name);
+
+    foreach ($element['#default_value'] as $entity) {
+      $entity_ids[] = $entity->id();
+    }
+
+    $results = array();
+
+    $view->displayHandlers->get($display_name)->setOption('entity_reference_options', [
+        'limit' => 0,
+        'ids' => $entity_ids
+      ]);
+
+    $results = $view->executeDisplay($display_name, $arguments);
+    $labels = array();
+
+    foreach ($results as $entity_id => $result) {
+      $label = html_entity_decode(strip_tags(\Drupal::service('renderer')->renderPlain($result)))  . ' (' . $entity_id . ')';
+
+      if ($widget_has_tags) {
+        // Labels containing commas or quotes must be wrapped in quotes.
+        $labels[] = Tags::encode($label);
+      }
+      else {
+        $labels[] = $label;
+      }
+    }
+
+    return implode(', ', $labels);
   }
 
   /**

@@ -41,6 +41,10 @@ class Google_Service_ServiceNetworking extends Google_Service
   public $operations;
   public $services;
   public $services_connections;
+  public $services_dnsRecordSets;
+  public $services_dnsZones;
+  public $services_projects_global_networks_peeredDnsDomains;
+  public $services_roles;
   
   /**
    * Constructs the internal representation of the ServiceNetworking service.
@@ -106,13 +110,13 @@ class Google_Service_ServiceNetworking extends Google_Service
                   'location' => 'query',
                   'type' => 'string',
                 ),
-                'pageSize' => array(
-                  'location' => 'query',
-                  'type' => 'integer',
-                ),
                 'filter' => array(
                   'location' => 'query',
                   'type' => 'string',
+                ),
+                'pageSize' => array(
+                  'location' => 'query',
+                  'type' => 'integer',
                 ),
               ),
             ),
@@ -225,6 +229,136 @@ class Google_Service_ServiceNetworking extends Google_Service
                 'force' => array(
                   'location' => 'query',
                   'type' => 'boolean',
+                ),
+              ),
+            ),
+          )
+        )
+    );
+    $this->services_dnsRecordSets = new Google_Service_ServiceNetworking_Resource_ServicesDnsRecordSets(
+        $this,
+        $this->serviceName,
+        'dnsRecordSets',
+        array(
+          'methods' => array(
+            'add' => array(
+              'path' => 'v1/{+parent}/dnsRecordSets:add',
+              'httpMethod' => 'POST',
+              'parameters' => array(
+                'parent' => array(
+                  'location' => 'path',
+                  'type' => 'string',
+                  'required' => true,
+                ),
+              ),
+            ),'remove' => array(
+              'path' => 'v1/{+parent}/dnsRecordSets:remove',
+              'httpMethod' => 'POST',
+              'parameters' => array(
+                'parent' => array(
+                  'location' => 'path',
+                  'type' => 'string',
+                  'required' => true,
+                ),
+              ),
+            ),'update' => array(
+              'path' => 'v1/{+parent}/dnsRecordSets:update',
+              'httpMethod' => 'POST',
+              'parameters' => array(
+                'parent' => array(
+                  'location' => 'path',
+                  'type' => 'string',
+                  'required' => true,
+                ),
+              ),
+            ),
+          )
+        )
+    );
+    $this->services_dnsZones = new Google_Service_ServiceNetworking_Resource_ServicesDnsZones(
+        $this,
+        $this->serviceName,
+        'dnsZones',
+        array(
+          'methods' => array(
+            'add' => array(
+              'path' => 'v1/{+parent}/dnsZones:add',
+              'httpMethod' => 'POST',
+              'parameters' => array(
+                'parent' => array(
+                  'location' => 'path',
+                  'type' => 'string',
+                  'required' => true,
+                ),
+              ),
+            ),'remove' => array(
+              'path' => 'v1/{+parent}/dnsZones:remove',
+              'httpMethod' => 'POST',
+              'parameters' => array(
+                'parent' => array(
+                  'location' => 'path',
+                  'type' => 'string',
+                  'required' => true,
+                ),
+              ),
+            ),
+          )
+        )
+    );
+    $this->services_projects_global_networks_peeredDnsDomains = new Google_Service_ServiceNetworking_Resource_ServicesProjectsServicenetworkingGlobalNetworksPeeredDnsDomains(
+        $this,
+        $this->serviceName,
+        'peeredDnsDomains',
+        array(
+          'methods' => array(
+            'create' => array(
+              'path' => 'v1/{+parent}/peeredDnsDomains',
+              'httpMethod' => 'POST',
+              'parameters' => array(
+                'parent' => array(
+                  'location' => 'path',
+                  'type' => 'string',
+                  'required' => true,
+                ),
+              ),
+            ),'delete' => array(
+              'path' => 'v1/{+name}',
+              'httpMethod' => 'DELETE',
+              'parameters' => array(
+                'name' => array(
+                  'location' => 'path',
+                  'type' => 'string',
+                  'required' => true,
+                ),
+              ),
+            ),'list' => array(
+              'path' => 'v1/{+parent}/peeredDnsDomains',
+              'httpMethod' => 'GET',
+              'parameters' => array(
+                'parent' => array(
+                  'location' => 'path',
+                  'type' => 'string',
+                  'required' => true,
+                ),
+              ),
+            ),
+          )
+        )
+    );
+    $this->services_roles = new Google_Service_ServiceNetworking_Resource_ServicesRoles(
+        $this,
+        $this->serviceName,
+        'roles',
+        array(
+          'methods' => array(
+            'add' => array(
+              'path' => 'v1/{+parent}/roles:add',
+              'httpMethod' => 'POST',
+              'parameters' => array(
+                'parent' => array(
+                  'location' => 'path',
+                  'type' => 'string',
+                  'required' => true,
                 ),
               ),
             ),

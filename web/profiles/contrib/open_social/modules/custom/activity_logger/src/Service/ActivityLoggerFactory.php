@@ -230,6 +230,8 @@ class ActivityLoggerFactory {
     // check if either create_bundle_group or move_content is already there
     // before we add another message that content is created in a group.
     $types = [
+      'moved_post_between_groups',
+      'create_post_group',
       'moved_content_between_groups',
       'create_topic_group',
       'create_event_group',
@@ -246,9 +248,19 @@ class ActivityLoggerFactory {
     }
 
     $ids = $query->execute();
-    if (!empty($ids) && $message_type != 'moved_content_between_groups') {
+
+    $allowed_duplicates = ['moved_content_between_groups'];
+    \Drupal::moduleHandler()->alter('activity_allowed_duplicates', $allowed_duplicates);
+
+    if ($related_object['target_type'] == 'node' && !empty($ids)
+      && $message_type != 'moved_content_between_groups') {
       $exists = TRUE;
     }
+    elseif ($related_object['target_type'] == 'post' && !empty($ids)
+      && $message_type != 'moved_post_between_groups') {
+      $exists = TRUE;
+    }
+
     return $exists;
   }
 

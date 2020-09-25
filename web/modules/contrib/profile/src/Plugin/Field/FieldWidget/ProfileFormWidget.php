@@ -156,9 +156,8 @@ class ProfileFormWidget extends WidgetBase implements ContainerFactoryPluginInte
     $property = ['profiles', $profile_type->id()];
     $profile = $form_state->get($property);
     if (!$profile) {
-      // If we're not editing an anonymous user, get the default profile.
       if (!$account->isAnonymous()) {
-        $profile = $profile_storage->loadDefaultByUser($account, $profile_type->id());
+        $profile = $profile_storage->loadByUser($account, $profile_type->id());
       }
       if (!$profile) {
         $profile = $profile_storage->create([
@@ -309,7 +308,7 @@ class ProfileFormWidget extends WidgetBase implements ContainerFactoryPluginInte
     foreach ($profiles as $profile) {
       assert($profile instanceof ProfileInterface);
       $profile->setOwnerId($account->id());
-      $profile->setPublished(TRUE);
+      $profile->setPublished();
       $profile->save();
     }
   }

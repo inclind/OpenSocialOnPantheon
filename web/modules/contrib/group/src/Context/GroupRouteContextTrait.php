@@ -91,6 +91,14 @@ trait GroupRouteContextTrait {
       $group_type = $route_match->getParameter('group_type');
       return $this->getEntityTypeManager()->getStorage('group')->create(['type' => $group_type->id()]);
     }
+    elseif ($route_match->getRouteName() == 'views.ajax' && !empty($_POST['view_path'])) {
+      $view_route_match = \Drupal::service('router')->match($_POST['view_path']);
+
+      // See if the route has a group parameter and try to retrieve it.
+      if (!empty($view_route_match) && !empty($group = $view_route_match['group']) && $group instanceof GroupInterface) {
+        return $group;
+      }
+    }
 
     return NULL;
   }

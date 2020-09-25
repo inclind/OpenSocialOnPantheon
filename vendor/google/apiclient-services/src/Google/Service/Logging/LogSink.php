@@ -15,20 +15,21 @@
  * the License.
  */
 
-class Google_Service_Logging_LogSink extends Google_Model
+class Google_Service_Logging_LogSink extends Google_Collection
 {
+  protected $collection_key = 'exclusions';
   protected $bigqueryOptionsType = 'Google_Service_Logging_BigQueryOptions';
   protected $bigqueryOptionsDataType = '';
   public $createTime;
   public $description;
   public $destination;
   public $disabled;
-  public $endTime;
+  protected $exclusionsType = 'Google_Service_Logging_LogExclusion';
+  protected $exclusionsDataType = 'array';
   public $filter;
   public $includeChildren;
   public $name;
   public $outputVersionFormat;
-  public $startTime;
   public $updateTime;
   public $writerIdentity;
 
@@ -78,13 +79,19 @@ class Google_Service_Logging_LogSink extends Google_Model
   {
     return $this->disabled;
   }
-  public function setEndTime($endTime)
+  /**
+   * @param Google_Service_Logging_LogExclusion
+   */
+  public function setExclusions($exclusions)
   {
-    $this->endTime = $endTime;
+    $this->exclusions = $exclusions;
   }
-  public function getEndTime()
+  /**
+   * @return Google_Service_Logging_LogExclusion
+   */
+  public function getExclusions()
   {
-    return $this->endTime;
+    return $this->exclusions;
   }
   public function setFilter($filter)
   {
@@ -117,14 +124,6 @@ class Google_Service_Logging_LogSink extends Google_Model
   public function getOutputVersionFormat()
   {
     return $this->outputVersionFormat;
-  }
-  public function setStartTime($startTime)
-  {
-    $this->startTime = $startTime;
-  }
-  public function getStartTime()
-  {
-    return $this->startTime;
   }
   public function setUpdateTime($updateTime)
   {

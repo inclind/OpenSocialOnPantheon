@@ -18,14 +18,14 @@ class WorkspacesUpdateTest extends UpdatePathTestBase {
   /**
    * {@inheritdoc}
    */
-  protected static $modules = ['workspaces', 'workspace_update_test'];
+  protected static $modules = ['workspaces'];
 
   /**
    * {@inheritdoc}
    */
   public function setDatabaseDumpFiles() {
     $this->databaseDumpFiles = [
-      __DIR__ . '/../../../../../system/tests/fixtures/update/drupal-8.filled.standard.php.gz',
+      __DIR__ . '/../../../../../system/tests/fixtures/update/drupal-8.4.0.bare.standard.php.gz',
       __DIR__ . '/../../../fixtures/update/drupal-8.6.0-workspaces_installed.php',
     ];
   }
@@ -131,6 +131,10 @@ class WorkspacesUpdateTest extends UpdatePathTestBase {
    * Tests that there is no active workspace during database updates.
    */
   public function testActiveWorkspaceDuringUpdate() {
+    $this->setUpCurrentUser([], ['view any workspace']);
+    $this->container->get('module_installer')->install(['workspace_update_test']);
+    $this->rebuildContainer();
+
     /** @var \Drupal\workspaces\WorkspaceManagerInterface $workspace_manager */
     $workspace_manager = \Drupal::service('workspaces.manager');
 

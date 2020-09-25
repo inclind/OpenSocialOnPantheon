@@ -10,3 +10,6 @@ social_post.post.*:
       label: 'Label'
     uuid:
       type: string
+    revision:
+      type: boolean
+      label: 'Whether a new revision should be created by default'

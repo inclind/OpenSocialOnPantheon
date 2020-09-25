@@ -680,7 +680,7 @@ function content_translation_page_attachments(&$page) {
         $page['#attached']['html_head_link'][] = [
           [
             'rel' => 'alternate',
-            'hreflang' => $language->getId(),
+            'hreflang' => $language->getId() != 'und' ? $language->getId() : 'x-default',
             'href' => $url,
           ],
           TRUE,

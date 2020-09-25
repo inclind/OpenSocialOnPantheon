@@ -36,11 +36,15 @@ class Google_Service_Bigquery_JobStatistics extends Google_Collection
   protected $reservationUsageType = 'Google_Service_Bigquery_JobStatisticsReservationUsage';
   protected $reservationUsageDataType = 'array';
   public $reservationId;
+  protected $rowLevelSecurityStatisticsType = 'Google_Service_Bigquery_RowLevelSecurityStatistics';
+  protected $rowLevelSecurityStatisticsDataType = '';
   protected $scriptStatisticsType = 'Google_Service_Bigquery_ScriptStatistics';
   protected $scriptStatisticsDataType = '';
   public $startTime;
   public $totalBytesProcessed;
   public $totalSlotMs;
+  protected $transactionInfoTemplateType = 'Google_Service_Bigquery_TransactionInfo';
+  protected $transactionInfoTemplateDataType = '';
 
   public function setCompletionRatio($completionRatio)
   {
@@ -155,6 +159,20 @@ class Google_Service_Bigquery_JobStatistics extends Google_Collection
     return $this->reservationId;
   }
   /**
+   * @param Google_Service_Bigquery_RowLevelSecurityStatistics
+   */
+  public function setRowLevelSecurityStatistics(Google_Service_Bigquery_RowLevelSecurityStatistics $rowLevelSecurityStatistics)
+  {
+    $this->rowLevelSecurityStatistics = $rowLevelSecurityStatistics;
+  }
+  /**
+   * @return Google_Service_Bigquery_RowLevelSecurityStatistics
+   */
+  public function getRowLevelSecurityStatistics()
+  {
+    return $this->rowLevelSecurityStatistics;
+  }
+  /**
    * @param Google_Service_Bigquery_ScriptStatistics
    */
   public function setScriptStatistics(Google_Service_Bigquery_ScriptStatistics $scriptStatistics)
@@ -191,5 +209,19 @@ class Google_Service_Bigquery_JobStatistics extends Google_Collection
   public function getTotalSlotMs()
   {
     return $this->totalSlotMs;
+  }
+  /**
+   * @param Google_Service_Bigquery_TransactionInfo
+   */
+  public function setTransactionInfoTemplate(Google_Service_Bigquery_TransactionInfo $transactionInfoTemplate)
+  {
+    $this->transactionInfoTemplate = $transactionInfoTemplate;
+  }
+  /**
+   * @return Google_Service_Bigquery_TransactionInfo
+   */
+  public function getTransactionInfoTemplate()
+  {
+    return $this->transactionInfoTemplate;
   }
 }
